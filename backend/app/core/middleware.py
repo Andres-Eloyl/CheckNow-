@@ -26,13 +26,18 @@ class TenantMiddleware(BaseHTTPMiddleware):
     SKIP_PREFIXES = (
         "/health", "/docs", "/openapi.json", "/redoc",
         "/api/auth/", "/api/admin/", "/api/rates/",
+        "/api/restaurants/", "/r/",
     )
+
+    EXACT_SKIP = ("/",)
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
 
         # Skip tenant resolution for non-tenant routes
-        if any(path.startswith(prefix) for prefix in self.SKIP_PREFIXES):
+        if path in self.EXACT_SKIP or any(
+            path.startswith(prefix) for prefix in self.SKIP_PREFIXES
+        ):
             return await call_next(request)
 
         # Extract slug from path: /api/{slug}/...

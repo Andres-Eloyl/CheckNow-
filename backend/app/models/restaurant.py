@@ -5,7 +5,7 @@ CheckNow! — Restaurant & Config Models
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
-    String, Boolean, DateTime, ForeignKey, Text
+    String, Boolean, DateTime, ForeignKey
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB, NUMERIC
@@ -63,7 +63,7 @@ class RestaurantConfig(Base):
     tax_rate: Mapped[float] = mapped_column(NUMERIC(5, 4), default=0.1600)
     service_charge: Mapped[float] = mapped_column(NUMERIC(5, 4), default=0.1000)
     currency_primary: Mapped[str] = mapped_column(String(3), default="USD")
-    accepted_methods: Mapped[dict] = mapped_column(
+    accepted_methods: Mapped[list] = mapped_column(
         JSONB, default=lambda: ["pago_movil", "zelle", "efectivo"]
     )
     primary_color: Mapped[str] = mapped_column(String(7), default="#6C63FF")

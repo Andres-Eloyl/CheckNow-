@@ -4,9 +4,9 @@ CheckNow! — Payment & Exchange Rate Models
 
 import uuid
 import enum
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date as date_type
 from sqlalchemy import String, DateTime, ForeignKey, Text, Date, Enum as SAEnum, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, NUMERIC, JSONB
 from app.core.database import Base
 
@@ -87,7 +87,7 @@ class ExchangeRate(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    date: Mapped[datetime] = mapped_column(Date, nullable=False)
+    date: Mapped[date_type] = mapped_column(Date, nullable=False)
     source: Mapped[str] = mapped_column(String(20), default="bcv")
     usd_to_ves: Mapped[float] = mapped_column(NUMERIC(15, 4), nullable=False)
     fetched_at: Mapped[datetime] = mapped_column(

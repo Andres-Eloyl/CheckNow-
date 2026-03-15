@@ -3,11 +3,13 @@ Alembic env.py — Async migration runner for CheckNow!
 """
 
 import asyncio
+import os
 from logging.config import fileConfig
 
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
-from sqlalchemy.ext.asyncio import async_engine_from_config
+from sqlalchemy.ext.asyncio import create_async_engine
+from sqlalchemy.engine.url import make_url
 
 from alembic import context
 
@@ -18,6 +20,11 @@ from app.models import *  # noqa: F401, F403
 config = context.config
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
+
+# Set the database URL from the environment variable if it exists
+database_url = os.environ.get("DATABASE_URL")
+if database_url:
+    config.set_main_option("sqlalchemy.url", database_url)
 
 target_metadata = Base.metadata
 
@@ -43,11 +50,17 @@ def do_run_migrations(connection: Connection) -> None:
 
 async def run_async_migrations() -> None:
     """Run migrations in 'online' mode with async engine."""
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    url = config.get_main_option("sqlalchemy.url")
+    
+    # We use prepared_statement_cache_size=0 for pgbouncer compatibility
+    connectable = create_async_engine(
+        url,
         poolclass=pool.NullPool,
+        connect_args={
+            "prepared_statement_cache_size": 0,
+        },
     )
+    
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
     await connectable.dispose()

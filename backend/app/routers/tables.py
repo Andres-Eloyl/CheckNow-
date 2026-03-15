@@ -155,6 +155,7 @@ async def get_table_qr(
     slug: str,
     table_id: str,
     restaurant_id: str = Depends(get_restaurant_id),
+    current_user: dict = Depends(get_current_restaurant),
     db: AsyncSession = Depends(get_db),
 ):
     """Generate and return the QR code PNG for a table."""

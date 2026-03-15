@@ -28,7 +28,7 @@ class TableSession(Base):
         UUID(as_uuid=True), ForeignKey("tables.id"), nullable=False, index=True
     )
     token: Mapped[str] = mapped_column(
-        String(255), unique=True, nullable=False, index=True
+        String(512), unique=True, nullable=False, index=True
     )
     opened_by: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("staff_users.id"), nullable=False

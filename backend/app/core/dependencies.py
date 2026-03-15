@@ -21,7 +21,7 @@ async def get_current_restaurant(
     For restaurant owner/manager auth.
     """
     payload = decode_token(credentials.credentials)
-    if not payload or payload.get("type") not in ("access", "refresh"):
+    if not payload or payload.get("type") != "access":
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired token.",
