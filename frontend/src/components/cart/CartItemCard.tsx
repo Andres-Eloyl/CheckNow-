@@ -82,7 +82,7 @@ export function CartItemCard({ item, readOnly = false }: CartItemCardProps) {
         <button
            type="button"
            onClick={() => removeItem(item.id)}
-           className="absolute top-2 right-2 p-2 text-slate-300 dark:text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all focus-visible:opacity-100 focus-visible:outline-none focus-visible:text-rose-500"
+           className="absolute bottom-2 right-2 p-2 text-slate-300 dark:text-slate-600 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all focus-visible:opacity-100 focus-visible:outline-none focus-visible:text-rose-500"
            aria-label="Remover ítem completo"
         >
            <span className="material-symbols-outlined text-[18px]">close</span>
