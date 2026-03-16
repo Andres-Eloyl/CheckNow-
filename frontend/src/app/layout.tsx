@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { OrderProvider } from "@/context/OrderContext";
+import { ConfigProvider } from "@/context/ConfigContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -38,15 +39,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ToastProvider>
-          <OrderProvider>
-            <ErrorBoundary>
-              <Suspense fallback={<div className="h-[100dvh] flex items-center justify-center"><LoadingSpinner /></div>}>
-                {children}
-              </Suspense>
-            </ErrorBoundary>
-          </OrderProvider>
-        </ToastProvider>
+        <ConfigProvider>
+          <ToastProvider>
+            <OrderProvider>
+              <ErrorBoundary>
+                <Suspense fallback={<div className="h-[100dvh] flex items-center justify-center"><LoadingSpinner /></div>}>
+                  {children}
+                </Suspense>
+              </ErrorBoundary>
+            </OrderProvider>
+          </ToastProvider>
+        </ConfigProvider>
       </body>
     </html>
   );

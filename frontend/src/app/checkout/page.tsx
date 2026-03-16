@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useOrder } from '@/hooks/useOrder';
+import { useConfig } from '@/context/ConfigContext';
 import { TipSelector } from '@/components/checkout/TipSelector';
 import { PaymentMethodsAccordion, PaymentMethod } from '@/components/checkout/PaymentMethodsAccordion';
 import { APP_CONSTANTS } from '@/lib/constants';
@@ -11,17 +12,28 @@ import { APP_CONSTANTS } from '@/lib/constants';
 export default function CheckoutPage() {
   const router = useRouter();
   const { tableTotal, clearCart } = useOrder();
+  const { config } = useConfig();
   
   // Note: For a fully integrated app we could read exactly how
   // the user opted to split. We default to TableTotal to not break the UI flow.
   const subtotal = tableTotal > 0 ? tableTotal : 42.50;
 
-  const [selectedTip, setSelectedTip] = useState<number | null>(15);
+  const [selectedTip, setSelectedTip] = useState<number | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<PaymentMethod>('transfer');
   const [refNumber, setRefNumber] = useState('');
   const [paymentState, setPaymentState] = useState<'idle' | 'processing' | 'success'>('idle');
 
-  const tipAmount = selectedTip !== null ? subtotal * (selectedTip / 100) : 0; 
+  // Set default tip when component loads based on config
+  useEffect(() => {
+    if (config.tipsEnabled && config.tipPercentages.length > 0 && selectedTip === null) {
+      setSelectedTip(config.tipPercentages[1] || config.tipPercentages[0]);
+    } else if (!config.tipsEnabled) {
+       setSelectedTip(null);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.tipsEnabled]);
+
+  const tipAmount = (selectedTip !== null && config.tipsEnabled) ? subtotal * (selectedTip / 100) : 0; 
   const grandTotal = subtotal + tipAmount;
 
   const handleValidateTransfer = () => {
@@ -134,8 +146,8 @@ export default function CheckoutPage() {
               <p className="text-slate-900 dark:text-white font-black text-[18px] tracking-tight">${subtotal.toFixed(2)}</p>
             </div>
             <div className="h-px bg-slate-200 dark:bg-white/10 w-full mb-3"></div>
-            {selectedTip !== null && selectedTip > 0 && (
-              <div className="flex items-center justify-between text-primary">
+            {config.tipsEnabled && selectedTip !== null && selectedTip > 0 && (
+              <div className="flex items-center justify-between text-[var(--color-primary)]">
                  <p className="text-[15px] font-bold">Propina ({selectedTip}%)</p>
                  <p className="font-bold">+${tipAmount.toFixed(2)}</p>
               </div>
