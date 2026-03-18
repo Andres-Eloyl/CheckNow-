@@ -13,11 +13,13 @@ from app.core.database import init_db, close_db
 from app.core.redis import get_redis, close_redis
 from app.core.middleware import TenantMiddleware, RateLimitMiddleware
 from app.websockets.manager import ws_manager
+from app.services.purge import run_purge_job
+import asyncio
 
 # Import all models to register them with SQLAlchemy
 from app.models import *  # noqa: F401, F403
 
-from app.routers import auth, health, restaurants, staff, tables, rates, sessions, menu, orders
+from app.routers import auth, health, restaurants, staff, tables, rates, sessions, menu, orders, splits, checkout
 from app.websockets import session_ws, dashboard_ws
 
 settings = get_settings()
@@ -41,25 +43,34 @@ if settings.SENTRY_DSN:
 async def lifespan(app: FastAPI):
     """Manage startup and shutdown events."""
     # Startup
-    print(f"🚀 Starting {settings.APP_NAME} ({settings.ENVIRONMENT})")
+    logger.info(f"🚀 Starting {settings.APP_NAME} ({settings.ENVIRONMENT})")
     if settings.ENVIRONMENT == "development":
         await init_db()
-        print("📦 Database tables created (development mode)")
+        logger.info("📦 Database tables created (development mode)")
 
     # Initialize Redis connection
     await get_redis()
-    print("🔴 Redis connected")
+    logger.info("🔴 Redis connected")
 
-    # Start WebSocket background task
-    await ws_manager.startup()
+    # Start WebSocket Pub/Sub listener
+    ws_manager.pubsub_task = asyncio.create_task(ws_manager.listen_to_redis())
+    logger.info("📡 WebSocket Pub/Sub listener started")
+
+    # Start Auto-Purge job
+    purge_task = asyncio.create_task(run_purge_job())
+    logger.info("🧹 Auto-Purge job started")
 
     yield
 
     # Shutdown
-    await ws_manager.shutdown()
+    logger.info(f"👋 Shutting down {settings.APP_NAME} gracefully")
+    purge_task.cancel()
+    if ws_manager.pubsub_task:
+        ws_manager.pubsub_task.cancel()
+    await ws_manager.shutdown() # Ensure manager shutdown logic is called
     await close_redis()
     await close_db()
-    print(f"👋 {settings.APP_NAME} shut down gracefully")
+    logger.info(f"👋 {settings.APP_NAME} shut down gracefully")
 
 
 # ──────────────────────────────────────────────
@@ -111,6 +122,8 @@ app.include_router(tables.router)
 app.include_router(sessions.router)
 app.include_router(menu.router)
 app.include_router(orders.router)
+app.include_router(splits.router)
+app.include_router(checkout.router)
 app.include_router(rates.router)
 app.include_router(session_ws.router)
 app.include_router(dashboard_ws.router)
