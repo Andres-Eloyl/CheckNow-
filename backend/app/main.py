@@ -12,12 +12,13 @@ from app.core.config import get_settings
 from app.core.database import init_db, close_db
 from app.core.redis import get_redis, close_redis
 from app.core.middleware import TenantMiddleware, RateLimitMiddleware
+from app.websockets.manager import ws_manager
 
 # Import all models to register them with SQLAlchemy
 from app.models import *  # noqa: F401, F403
 
-# Import routers
-from app.routers import auth, health, restaurants, staff, tables, rates
+from app.routers import auth, health, restaurants, staff, tables, rates, sessions, menu, orders
+from app.websockets import session_ws, dashboard_ws
 
 settings = get_settings()
 
@@ -49,9 +50,13 @@ async def lifespan(app: FastAPI):
     await get_redis()
     print("🔴 Redis connected")
 
+    # Start WebSocket background task
+    await ws_manager.startup()
+
     yield
 
     # Shutdown
+    await ws_manager.shutdown()
     await close_redis()
     await close_db()
     print(f"👋 {settings.APP_NAME} shut down gracefully")
@@ -103,7 +108,12 @@ app.include_router(auth.router)
 app.include_router(restaurants.router)
 app.include_router(staff.router)
 app.include_router(tables.router)
+app.include_router(sessions.router)
+app.include_router(menu.router)
+app.include_router(orders.router)
 app.include_router(rates.router)
+app.include_router(session_ws.router)
+app.include_router(dashboard_ws.router)
 
 
 # ──────────────────────────────────────────────
