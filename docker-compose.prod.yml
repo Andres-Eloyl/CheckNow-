@@ -1,0 +1,59 @@
+version: '3.8'
+
+services:
+  # The FastAPI Backend API
+  backend:
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    image: checknow-backend:prod
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_KEY}
+      - DATABASE_URL=${DATABASE_URL}
+      - REDIS_URL=redis://redis:6379/0
+      - SECRET_KEY=${SECRET_KEY}
+      - AES_KEY=${AES_KEY}
+      - SENTRY_DSN=${SENTRY_DSN}
+    depends_on:
+      - redis
+    # We don't expose ports directly to the host, we let Nginx handle it
+    expose:
+      - "8000"
+    networks:
+      - checknow-network
+
+  # Redis for WebSocket Pub/Sub and caching
+  redis:
+    image: redis:7-alpine
+    restart: always
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - checknow-network
+
+  # NGINX Reverse Proxy
+  nginx:
+    image: nginx:alpine
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certbot/conf:/etc/letsencrypt:ro
+      - ./nginx/certbot/www:/var/www/certbot:ro
+    depends_on:
+      - backend
+    networks:
+      - checknow-network
+
+volumes:
+  redis_data:
+
+networks:
+  checknow-network:
+    driver: bridge

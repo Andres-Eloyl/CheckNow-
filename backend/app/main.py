@@ -24,6 +24,9 @@ from app.websockets import session_ws, dashboard_ws
 
 settings = get_settings()
 
+import logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 # ──────────────────────────────────────────────
 # Sentry (Error Tracking)

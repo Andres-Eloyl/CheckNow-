@@ -126,19 +126,19 @@ async def get_checkout_summary(
     tax_rate = 0.16 # 16% IVA
     service_charge_rate = 0.00 # e.g. 10%
 
-    tax = round(subtotal * tax_rate, 2)
-    service_charge = round(subtotal * service_charge_rate, 2)
-    total_base = round(subtotal + tax + service_charge, 2)
+    tax = round(float(subtotal * tax_rate), 2)
+    service_charge = round(float(subtotal * service_charge_rate), 2)
+    total_base = round(float(subtotal + tax + service_charge), 2)
 
     return CheckoutSummary(
         user_id=str(user.id),
         alias=user.alias,
-        subtotal=round(subtotal, 2),
+        subtotal=round(float(subtotal), 2),
         tax=tax,
         service_charge=service_charge,
-        suggested_tip_10=round(subtotal * 0.10, 2),
-        suggested_tip_15=round(subtotal * 0.15, 2),
-        suggested_tip_20=round(subtotal * 0.20, 2),
+        suggested_tip_10=round(float(subtotal * 0.10), 2),
+        suggested_tip_15=round(float(subtotal * 0.15), 2),
+        suggested_tip_20=round(float(subtotal * 0.20), 2),
         total_before_tip=total_base
     )
 
