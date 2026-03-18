@@ -20,6 +20,9 @@ engine = create_async_engine(
     echo=settings.DB_ECHO,
     pool_pre_ping=True,
     pool_recycle=3600,
+    connect_args={
+        "prepared_statement_cache_size": 0,  # CRITICAL: required for Supabase pooler / PgBouncer
+    },
 )
 
 async_session_factory = async_sessionmaker(
