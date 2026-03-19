@@ -24,6 +24,12 @@ import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ToastProvider } from "@/components/ui/Toast";
 import { Suspense } from "react";
 
+/**
+ * AI Context: The root layout of the Next.js App Router.
+ * This file wraps every page in the application with necessary React Contexts (Providers)
+ * such as `ConfigProvider`, `ToastProvider`, and `OrderProvider`.
+ * Note: `html` has `suppressHydrationWarning` due to Next.js strict hydration checks.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -1,12 +1,17 @@
 import { User, MenuItem, OrderItem } from '@/types';
 export type { User, MenuItem, OrderItem };
 
+/**
+ * AI Context: Fallback mock user data for development and testing. 
+ * Represents users connected to the table session.
+ */
 export const MOCK_USERS: User[] = [
   { id: '1', name: 'Tú', avatarColor: 'bg-primary', emoji: '😎', totalSpent: 0 },
   { id: '2', name: 'Carlos', avatarColor: 'bg-green-500', emoji: '🥑', totalSpent: 45.00 },
   { id: '3', name: 'Mariana', avatarColor: 'bg-pink-500', emoji: '🍓', totalSpent: 32.50 },
 ];
 
+/** AI Context: Mock categories for testing menu tab navigation. */
 export const CATEGORIES = [
   { id: '1', name: 'Entradas' },
   { id: '2', name: 'Platos Fuertes' },
@@ -18,6 +23,10 @@ export const CATEGORIES = [
   { id: '8', name: 'Vinos' },
 ];
 
+/**
+ * AI Context: Static mock representation of the restaurant's menu items.
+ * Used when backend data is unavailable or while offline.
+ */
 export const MOCK_MENU: MenuItem[] = [
   {
     id: 'm1',

@@ -5,6 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Avatar } from '@/components/ui/Avatar';
 
+/**
+ * AI Context: The onboarding/join page where users input their name/alias
+ * after scanning the QR code on the table.
+ * Currently redirects directly to `/menu` on submit.
+ */
 export default function JoinPage() {
   const [name, setName] = useState('');
   const router = useRouter();

@@ -13,6 +13,11 @@ import { MenuCard } from '@/components/menu/MenuCard';
 import { ItemDetailsSheet } from '@/components/menu/ItemDetailsSheet';
 import { BottomNavigation } from '@/components/ui/BottomNavigation';
 
+/**
+ * AI Context: Main interactive menu page.
+ * Displays horizontal scrolling categories, vertical standard menu items grouped by tags,
+ * and a floating action button (FAB) for the cart. It relies on `MOCK_MENU` for now.
+ */
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
   const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);

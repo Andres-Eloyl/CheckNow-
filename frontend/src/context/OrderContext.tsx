@@ -4,10 +4,18 @@ import React, { createContext, useReducer, ReactNode } from 'react';
 import { OrderItem } from '@/types';
 import { MOCK_CART } from '@/lib/mocks/data';
 
+/**
+ * AI Context: The core state defining the current table's order.
+ * `cart` holds all items ordered by all users at the table.
+ */
 interface OrderState {
   cart: OrderItem[];
 }
 
+/**
+ * AI Context: Actions to mutate the order state.
+ * Uses a useReducer pattern for predictable state transitions.
+ */
 type OrderAction = 
   | { type: 'ADD_ITEM'; payload: OrderItem }
   | { type: 'REMOVE_ITEM'; payload: string }
@@ -15,13 +23,18 @@ type OrderAction =
   | { type: 'CLEAR_CART' };
 
 const initialState: OrderState = {
-  cart: MOCK_CART, // Se inicia con el backend mockeado temporalmente
+  cart: MOCK_CART, // AI Context: Initializes with mocked data for development.
 };
 
+/**
+ * Main reducer for handling cart operations.
+ * AI Context: Ensures immutability and groups exact same items (by menu item ID, user ID, and exact modifiers)
+ * by incrementing quantity rather than duplicate entries.
+ */
 function orderReducer(state: OrderState, action: OrderAction): OrderState {
   switch (action.type) {
     case 'ADD_ITEM': {
-      // Buscar si el item ya existe con los mismos modificadores
+      // Find if item exists exactly matching the current item constraints
       const existingItemIndex = state.cart.findIndex(
         item => item.menuItem.id === action.payload.menuItem.id && 
                 item.userId === action.payload.userId &&
@@ -29,7 +42,6 @@ function orderReducer(state: OrderState, action: OrderAction): OrderState {
       );
 
       if (existingItemIndex >= 0) {
-        // Usa inmutabilidad con spread operator (Evita el anti-patrón Mutación)
         const newCart = [...state.cart];
         newCart[existingItemIndex] = {
           ...newCart[existingItemIndex],
@@ -59,6 +71,10 @@ function orderReducer(state: OrderState, action: OrderAction): OrderState {
   }
 }
 
+/**
+ * Context that provides raw state and `dispatch` function.
+ * UI components shouldn't ideally use this directly; they should use `useOrder` hook instead.
+ */
 export const OrderContext = createContext<{
   state: OrderState;
   dispatch: React.Dispatch<OrderAction>;
