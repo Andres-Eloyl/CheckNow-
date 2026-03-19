@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
     logger.info("🔴 Redis connected")
 
     # Start WebSocket Pub/Sub listener
-    ws_manager.pubsub_task = asyncio.create_task(ws_manager.listen_to_redis())
+    await ws_manager.startup()
     logger.info("📡 WebSocket Pub/Sub listener started")
 
     # Start Auto-Purge job
