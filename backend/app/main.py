@@ -19,7 +19,7 @@ import asyncio
 # Import all models to register them with SQLAlchemy
 from app.models import *  # noqa: F401, F403
 
-from app.routers import auth, health, restaurants, staff, tables, rates, sessions, menu, orders, splits, checkout, admin, subscriptions, analytics
+from app.routers import auth, health, restaurants, staff, tables, rates, sessions, menu, orders, splits, checkout, admin, subscriptions, analytics, cross_sell
 from app.websockets import session_ws, dashboard_ws
 
 settings = get_settings()
@@ -131,6 +131,7 @@ app.include_router(rates.router)
 app.include_router(admin.router)
 app.include_router(subscriptions.router)
 app.include_router(analytics.router)
+app.include_router(cross_sell.router)
 app.include_router(session_ws.router)
 app.include_router(dashboard_ws.router)
 
