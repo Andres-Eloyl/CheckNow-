@@ -5,13 +5,15 @@ CRUD operations for staff members.
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import List
 
 from app.core.database import get_db
 from app.core.dependencies import get_current_restaurant, get_restaurant_id
 from app.core.security import hash_pin
 from app.models.staff import StaffUser, StaffRole
+from app.models.restaurant import Restaurant
+from app.models.subscription import SubscriptionPlan
 from app.schemas.staff import StaffCreate, StaffUpdate, StaffResponse
 
 router = APIRouter(tags=["Staff"])
@@ -46,6 +48,30 @@ async def create_staff(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new staff member."""
+    # ── Plan limit enforcement ──
+    rest_result = await db.execute(
+        select(Restaurant).where(Restaurant.id == restaurant_id)
+    )
+    restaurant = rest_result.scalar_one_or_none()
+    if restaurant and restaurant.plan_id:
+        plan_result = await db.execute(
+            select(SubscriptionPlan).where(SubscriptionPlan.id == restaurant.plan_id)
+        )
+        plan = plan_result.scalar_one_or_none()
+        if plan:
+            count_result = await db.execute(
+                select(func.count()).select_from(StaffUser).where(
+                    StaffUser.restaurant_id == restaurant_id,
+                    StaffUser.is_active == True,
+                )
+            )
+            current_count = count_result.scalar() or 0
+            if current_count >= plan.max_staff_users:
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Has alcanzado el límite de {plan.max_staff_users} empleados de tu plan '{plan.name}'. Actualiza tu plan para agregar más.",
+                )
+
     # Validate role
     try:
         role = StaffRole(data.role)

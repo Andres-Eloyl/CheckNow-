@@ -6,6 +6,7 @@ Handles restaurant registration/login and staff PIN login.
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from datetime import datetime, timedelta, timezone
 
 from app.core.database import get_db
 from app.core.security import (
@@ -15,6 +16,7 @@ from app.core.security import (
 )
 from app.models.restaurant import Restaurant, RestaurantConfig
 from app.models.staff import StaffUser
+from app.models.subscription import SubscriptionPlan
 from app.schemas.auth import (
     RestaurantRegister, RestaurantLogin, TokenResponse,
     RefreshTokenRequest, StaffLogin, StaffTokenResponse,
@@ -60,6 +62,15 @@ async def register_restaurant(
     # Create default config
     config = RestaurantConfig(restaurant_id=restaurant.id)
     db.add(config)
+
+    # Auto-assign Free plan + 14-day trial
+    free_plan = await db.execute(
+        select(SubscriptionPlan).where(SubscriptionPlan.name == "Free")
+    )
+    free_plan_obj = free_plan.scalar_one_or_none()
+    if free_plan_obj:
+        restaurant.plan_id = free_plan_obj.id
+        restaurant.trial_ends = datetime.now(timezone.utc) + timedelta(days=14)
 
     # Generate tokens
     token_data = {"sub": str(restaurant.id), "slug": restaurant.slug, "role": "owner"}
