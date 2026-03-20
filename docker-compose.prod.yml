@@ -1,43 +1,78 @@
 version: '3.8'
 
 services:
-  # The FastAPI Backend API
+  # FastAPI Backend API
   backend:
     build: 
       context: ./backend
       dockerfile: Dockerfile
-    image: checknow-backend:prod
+    image: checknow-backend:latest
+    container_name: checknow-backend-prod
     restart: always
-    environment:
-      - ENVIRONMENT=production
-      - SUPABASE_URL=${SUPABASE_URL}
-      - SUPABASE_KEY=${SUPABASE_KEY}
-      - DATABASE_URL=${DATABASE_URL}
-      - REDIS_URL=redis://redis:6379/0
-      - SECRET_KEY=${SECRET_KEY}
-      - AES_KEY=${AES_KEY}
-      - SENTRY_DSN=${SENTRY_DSN}
+    env_file: .env.prod
     depends_on:
       - redis
-    # We don't expose ports directly to the host, we let Nginx handle it
+      - minio
     expose:
       - "8000"
     networks:
       - checknow-network
 
+  # Next.js Frontend
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: checknow-frontend:latest
+    container_name: checknow-frontend-prod
+    restart: always
+    env_file: .env.prod
+    depends_on:
+      - backend
+    expose:
+      - "3000"
+    networks:
+      - checknow-network
+
   # Redis for WebSocket Pub/Sub and caching
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
+    container_name: checknow-redis-prod
     restart: always
     command: redis-server --appendonly yes
     volumes:
       - redis_data:/data
     networks:
       - checknow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MinIO for Object Storage
+  minio:
+    image: minio/minio:RELEASE.2024-03-03T20-29-49Z
+    container_name: checknow-minio-prod
+    restart: always
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - checknow-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # NGINX Reverse Proxy
   nginx:
     image: nginx:alpine
+    container_name: checknow-nginx-prod
     restart: always
     ports:
       - "80:80"
@@ -47,12 +82,16 @@ services:
       - ./nginx/certbot/conf:/etc/letsencrypt:ro
       - ./nginx/certbot/www:/var/www/certbot:ro
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_started
     networks:
       - checknow-network
 
 volumes:
   redis_data:
+  minio_data:
 
 networks:
   checknow-network:

@@ -1,14 +1,20 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #f47b25;
-  --color-secondary: #25a3f4;
-  --color-background-light: #f8f7f5;
-  --color-background-dark: #120d0b;
-  --color-neutral-dark: #2d2018;
-  --color-neutral-border: #4a3a2f;
+  --color-primary: #6C63FF;
+  --color-secondary: #FF6B35;
+  --color-success: #22C55E;
+  --color-danger: #EF4444;
+  --color-warning: #F59E0B;
+  --color-background-light: #F8F8FF;
+  --color-background-dark: #0F0F13;
+  --color-surface: #1A1A24;
+  --color-surface-2: #23232F;
+  --color-neutral-dark: #1A1A24;
+  --color-neutral-border: #2D2D3D;
+  --color-text-muted: #8B8BA4;
   
-  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-display: "Inter", "Plus Jakarta Sans", system-ui, sans-serif;
   
   --radius-xl: 1.5rem;
   --radius-2xl: 2rem;
@@ -16,20 +22,20 @@
 }
 
 :root {
-  --background: #f8f7f5;
-  --foreground: #120d0b;
+  --background: #F8F8FF;
+  --foreground: #0F0F13;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #120d0b;
-    --foreground: #f8f7f5;
+    --background: #0F0F13;
+    --foreground: #F8F8FF;
   }
 }
 
 :root.dark {
-  --background: #120d0b;
-  --foreground: #f8f7f5;
+  --background: #0F0F13;
+  --foreground: #F8F8FF;
 }
 
 body {
@@ -37,14 +43,109 @@ body {
   color: var(--foreground);
   font-family: var(--font-display);
   overflow-x: hidden;
-  min-height: max(884px, 100dvh);
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Hide scrollbar for tabs */
+/* ─── Scrollbar Styles ─── */
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
 }
 .hide-scrollbar {
-  -ms-overflow-style: none; /* IE and Edge */
-  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
+
+/* Custom scrollbar for dashboard */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(108, 99, 255, 0.3);
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(108, 99, 255, 0.5);
+}
+
+/* ─── Status Badge Animations ─── */
+@keyframes pulse-amber {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes blink-green {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(200%) skew(-15deg);
+  }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+.animate-pulse-amber {
+  animation: pulse-amber 1.5s ease-in-out infinite;
+}
+
+.animate-blink-green {
+  animation: blink-green 1s ease-in-out infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* ─── Glassmorphism ─── */
+.glass {
+  background: rgba(26, 26, 36, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-light {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* ─── Status Badges ─── */
+.badge-pending {
+  @apply bg-slate-500/20 text-slate-400;
+}
+.badge-sent {
+  @apply bg-blue-500/20 text-blue-400;
+}
+.badge-preparing {
+  @apply bg-amber-500/20 text-amber-400;
+  animation: pulse-amber 1.5s ease-in-out infinite;
+}
+.badge-ready {
+  @apply bg-green-500/20 text-green-400;
+  animation: blink-green 1s ease-in-out infinite;
+}
+.badge-delivered {
+  @apply bg-slate-500/10 text-slate-500;
+}
+
+/* ─── Table Status Dots ─── */
+.dot-free { @apply bg-success; }
+.dot-active { @apply bg-warning; }
+.dot-reserved { @apply bg-danger; }

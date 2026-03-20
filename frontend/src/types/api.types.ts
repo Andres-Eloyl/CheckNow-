@@ -47,7 +47,7 @@ export interface StaffTokenResponse {
   role: StaffRole;
 }
 
-export type StaffRole = 'owner' | 'manager' | 'cashier' | 'waiter';
+export type StaffRole = 'owner' | 'manager' | 'cashier' | 'waiter' | 'kitchen' | 'bar';
 
 // ──────────────────────────────────────────────
 // Restaurant
@@ -71,6 +71,8 @@ export interface RestaurantConfigUpdate {
   primary_color?: string;
   secondary_color?: string;
   wifi_ssid?: string;
+  wifi_password?: string;
+  logo_url?: string;
   cross_sell_enabled?: boolean;
   loyalty_enabled?: boolean;
 }
@@ -293,12 +295,16 @@ export interface PaymentCreate {
 export interface PaymentResponse {
   id: string;
   session_user_id: string;
+  user_alias?: string;
+  table_number?: number;
   amount_usd: number;
   amount_local?: number;
   currency: string;
   method: string;
   tip_amount: number;
   status: PaymentStatus;
+  reference_code?: string;
+  rejection_reason?: string;
   created_at: string;
 }
 

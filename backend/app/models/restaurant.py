@@ -72,6 +72,8 @@ class RestaurantConfig(Base):
     wifi_ssid: Mapped[str | None] = mapped_column(String(100))
     cross_sell_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     loyalty_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
+    points_reward_rate: Mapped[float] = mapped_column(NUMERIC(5, 4), default=0.0500)
+    points_redemption_value: Mapped[float] = mapped_column(NUMERIC(10, 2), default=1.00)
 
     # Relationships
     restaurant: Mapped["Restaurant"] = relationship(back_populates="config")

@@ -1,9 +1,11 @@
 "use client";
 
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { MenuItemResponse } from '@/types/api.types';
-import { useOrder } from '@/hooks/useOrder';
-import { useState, useEffect } from 'react';
+import { useSessionStore } from '@/stores/session.store';
+import { orderService } from '@/lib/api/order.service';
+import { useToast } from '@/components/ui/Toast';
 
 interface ItemDetailsSheetProps {
   item: MenuItemResponse | null;
@@ -15,7 +17,9 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
   const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
   const [notes, setNotes] = useState('');
   const [isAdding, setIsAdding] = useState(false);
-  const { addOrderItem } = useOrder();
+  
+  const { slug, sessionToken, addOrder } = useSessionStore();
+  const { toast } = useToast();
 
   useEffect(() => {
     if (item) {
@@ -41,17 +45,23 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
   };
 
   const handleAddToCart = async () => {
+    if (!slug || !sessionToken) {
+      toast('Sesión no válida', 'error');
+      return;
+    }
     setIsAdding(true);
     try {
-      await addOrderItem({
+      const newOrder = await orderService.addItem(slug, sessionToken, {
         menu_item_id: item.id,
         quantity,
         modifiers: selectedModifiers.length > 0 ? selectedModifiers : undefined,
         notes: notes.trim() || undefined,
       });
+      addOrder(newOrder);
+      toast('Agregado a la orden', 'success');
       onClose();
     } catch {
-      // Error is handled by the hook/context (sets state.error)
+      toast('Error al agregar orden', 'error');
     } finally {
       setIsAdding(false);
     }

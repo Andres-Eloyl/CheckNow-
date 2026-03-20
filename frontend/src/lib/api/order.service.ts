@@ -62,4 +62,9 @@ export const orderService = {
       { staffAuth: true }
     );
   },
+
+  /** Get all active orders for staff KDS view. */
+  async getActiveOrders(slug: string): Promise<OrderItemResponse[]> {
+    return api.get<OrderItemResponse[]>(`/api/${slug}/orders/active`, { staffAuth: true });
+  },
 };
