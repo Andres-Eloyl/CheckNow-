@@ -4,7 +4,7 @@ CheckNow! — Menu Schemas
 
 from pydantic import BaseModel, Field
 from typing import Optional, List
-
+from uuid import UUID
 
 class CategoryCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100, examples=["Bebidas"])
@@ -20,7 +20,7 @@ class CategoryUpdate(BaseModel):
 
 
 class CategoryResponse(BaseModel):
-    id: str
+    id: UUID
     name: str
     display_order: int
     icon: Optional[str] = None
@@ -35,7 +35,7 @@ class ModifierCreate(BaseModel):
 
 
 class ModifierResponse(BaseModel):
-    id: str
+    id: UUID
     name: str
     extra_price: float
     is_active: bool
@@ -44,7 +44,7 @@ class ModifierResponse(BaseModel):
 
 
 class MenuItemCreate(BaseModel):
-    category_id: str
+    category_id: UUID
     name: str = Field(..., min_length=1, max_length=255, examples=["Pabellón Criollo"])
     description: Optional[str] = Field(None, examples=["Plato nacional venezolano"])
     price_usd: float = Field(..., gt=0, examples=[12.50])
@@ -72,8 +72,8 @@ class MenuItemUpdate(BaseModel):
 
 
 class MenuItemResponse(BaseModel):
-    id: str
-    category_id: str
+    id: UUID
+    category_id: UUID
     name: str
     description: Optional[str] = None
     price_usd: float
@@ -84,22 +84,21 @@ class MenuItemResponse(BaseModel):
     is_available: bool
     is_featured: bool
     stock_count: Optional[int] = None
-    tags: list = []
+    tags: Optional[List[str]] = []
     modifiers: List[ModifierResponse] = []
 
     model_config = {"from_attributes": True}
 
 
-class MenuResponse(BaseModel):
-    """Full menu with categories and items."""
-    categories: List["MenuCategoryFull"]
-
-
 class MenuCategoryFull(BaseModel):
-    id: str
+    id: UUID
     name: str
     display_order: int
     icon: Optional[str] = None
     items: List[MenuItemResponse] = []
 
     model_config = {"from_attributes": True}
+
+class MenuResponse(BaseModel):
+    """Full menu with categories and items."""
+    categories: List[MenuCategoryFull]

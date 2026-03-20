@@ -5,6 +5,7 @@ import { useParams, useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDashboardStore } from '@/stores/dashboard.store';
+import { authService } from '@/lib/api/auth.service';
 
 const NAV_ITEMS = [
   { href: 'dashboard', icon: 'dashboard', label: 'Panel' },
@@ -36,6 +37,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       } else {
         router.replace('/login');
       }
+      return;
+    }
+
+    // Validate owner session
+    if (role === 'owner') {
+      authService.getMe().catch((err) => {
+        console.error('Session validation failed:', err);
+      });
     }
   }, [accessToken, role, slug, router]);
 

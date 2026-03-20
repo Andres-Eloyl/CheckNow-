@@ -96,6 +96,8 @@ export function clearSessionAuth(): void {
 // Error Handling
 // ──────────────────────────────────────────────
 
+import { useAuthStore } from '@/stores/auth.store';
+
 export class ApiError extends Error {
   constructor(
     public status: number,
@@ -113,10 +115,29 @@ export class ApiError extends Error {
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
   body?: unknown;
-  /** If true, include the staff JWT Bearer token. */
+  /** If true, include the JWT Bearer token. */
+  requiresAuth?: boolean;
+  /** Legacy support: mapped to requiresAuth */
   staffAuth?: boolean;
   /** If true, include X-Session-User-Id header. */
   sessionAuth?: boolean;
+}
+
+/**
+ * Extracts the token from Zustand's persisted state.
+ */
+function getZustandToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const authStorage = localStorage.getItem('checknow-auth');
+    if (authStorage) {
+      const parsed = JSON.parse(authStorage);
+      return parsed.state?.accessToken || null;
+    }
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
 }
 
 /**
@@ -124,16 +145,18 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
  * Handles JSON serialization, auth headers, and error normalization.
  */
 async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-  const { body, staffAuth = false, sessionAuth = false, ...fetchOptions } = options;
+  const { body, staffAuth = false, requiresAuth = false, sessionAuth = false, ...fetchOptions } = options;
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...(fetchOptions.headers as Record<string, string> || {}),
   };
 
-  // Staff JWT token
-  if (staffAuth) {
-    const token = getStaffToken();
+  const needsAuth = requiresAuth || staffAuth;
+
+  if (needsAuth) {
+    // Try Zustand store first, fallback to legacy staff token
+    const token = getZustandToken() || getStaffToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -150,11 +173,49 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
   const url = `${API_BASE_URL}${endpoint}`;
 
   try {
-    const response = await fetch(url, {
+    let response = await fetch(url, {
       ...fetchOptions,
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
+    
+    // Automatic Token Refresh
+    if (response.status === 401 && needsAuth && !endpoint.includes('/refresh') && !endpoint.includes('/login')) {
+      const state = useAuthStore.getState();
+      const refreshToken = state.refreshToken;
+      
+      if (refreshToken) {
+        try {
+          const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh_token: refreshToken })
+          });
+          
+          if (refreshRes.ok) {
+            const refreshData = await refreshRes.json();
+            // Update store
+            state.setTokens(refreshData.access_token, refreshData.refresh_token);
+            // Update headers and retry request
+            headers['Authorization'] = `Bearer ${refreshData.access_token}`;
+            response = await fetch(url, {
+              ...fetchOptions,
+              headers,
+              body: body ? JSON.stringify(body) : undefined,
+            });
+          } else {
+            state.logout(); // Refresh token failed/expired
+          }
+        } catch {
+          // Network error during refresh
+        }
+      } else {
+        // No refresh token available, force logout if it's not a legacy token
+        if (!getStaffToken()) {
+          state.logout();
+        }
+      }
+    }
 
     // 204 No Content
     if (response.status === 204) {

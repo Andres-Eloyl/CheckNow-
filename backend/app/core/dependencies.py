@@ -37,8 +37,16 @@ async def get_current_staff(
     Dependency: validates staff JWT and returns the payload.
     For staff (waiter, cashier, manager, owner) auth.
     """
+    import inspect
+    print("--- inside get_current_staff ---", flush=True)
+    print(f"Token received: {credentials.credentials[:20]}...", flush=True)
     payload = decode_token(credentials.credentials)
-    if not payload or payload.get("type") != "staff":
+    print(f"Payload decoded: {payload}", flush=True)
+    if payload:
+        print(f"Type: {payload.get('type')} - Condition: {payload.get('type') not in ['staff', 'access']}", flush=True)
+    
+    if not payload or payload.get("type") not in ["staff", "access"]:
+        print("RAISING 401 UNAUTHORIZED", flush=True)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired staff token.",
@@ -53,6 +61,10 @@ def require_role(*allowed_roles: str):
     Usage: Depends(require_role("owner", "manager"))
     """
     async def _check_role(staff: dict = Depends(get_current_staff)):
+        # Owner "access" tokens bypass role checks
+        if staff.get("type") == "access":
+            return staff
+            
         if staff.get("role") not in allowed_roles:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

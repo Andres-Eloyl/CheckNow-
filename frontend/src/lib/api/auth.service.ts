@@ -11,6 +11,7 @@ import type {
   TokenResponse,
   RestaurantRegisterRequest,
   RefreshTokenRequest,
+  RestaurantMeResponse,
 } from '@/types/api.types';
 
 export const authService = {
@@ -22,6 +23,11 @@ export const authService = {
   /** Login as restaurant owner */
   async loginRestaurant(data: RestaurantLoginRequest): Promise<TokenResponse> {
     return api.post<TokenResponse>('/api/auth/login', data);
+  },
+
+  /** Get current authenticated user profile */
+  async getMe(): Promise<RestaurantMeResponse> {
+    return api.get<RestaurantMeResponse>('/api/auth/me', { requiresAuth: true });
   },
 
   /** Refresh access token */

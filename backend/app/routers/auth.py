@@ -14,12 +14,13 @@ from app.core.security import (
     create_access_token, create_refresh_token, create_staff_token,
     decode_token,
 )
+from app.core.dependencies import get_current_restaurant
 from app.models.restaurant import Restaurant, RestaurantConfig
 from app.models.staff import StaffUser
 from app.models.subscription import SubscriptionPlan
 from app.schemas.auth import (
     RestaurantRegister, RestaurantLogin, TokenResponse,
-    RefreshTokenRequest, StaffLogin, StaffTokenResponse,
+    RefreshTokenRequest, StaffLogin, StaffTokenResponse, RestaurantMeResponse
 )
 
 router = APIRouter(tags=["Authentication"])
@@ -154,6 +155,41 @@ async def refresh_token(
         refresh_token=refresh_token_new,
         restaurant_id=str(restaurant.id),
         slug=restaurant.slug,
+    )
+
+
+@router.get("/api/auth/me", response_model=RestaurantMeResponse)
+async def get_current_user_profile(
+    current_user: dict = Depends(get_current_restaurant),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get the current authenticated restaurant's profile."""
+    restaurant_id = current_user.get("sub")
+    if not restaurant_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload.",
+        )
+        
+    result = await db.execute(
+        select(Restaurant).where(Restaurant.id == restaurant_id)
+    )
+    restaurant = result.scalar_one_or_none()
+    
+    if not restaurant or not restaurant.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Restaurant not found or inactive.",
+        )
+        
+    return RestaurantMeResponse(
+        id=str(restaurant.id),
+        name=restaurant.name,
+        slug=restaurant.slug,
+        email=restaurant.email,
+        phone=restaurant.phone,
+        country=restaurant.country,
+        is_active=restaurant.is_active,
     )
 
 

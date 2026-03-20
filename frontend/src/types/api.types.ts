@@ -63,6 +63,16 @@ export interface RestaurantPublic {
   logo_url?: string;
 }
 
+export interface RestaurantMeResponse {
+  id: string;
+  name: string;
+  slug: string;
+  email: string;
+  phone?: string;
+  country: string;
+  is_active: boolean;
+}
+
 export interface RestaurantConfigUpdate {
   tax_rate?: number;
   service_charge?: number;

@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_
 
 from app.core.database import get_db
 from app.core.dependencies import get_restaurant_id, get_current_staff
@@ -103,7 +103,7 @@ async def get_session(
         select(TableSession, Table)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             Table.restaurant_id == restaurant_id,
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
@@ -141,7 +141,7 @@ async def join_session(
         select(TableSession)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             Table.restaurant_id == restaurant_id,
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
@@ -197,8 +197,9 @@ async def close_session(
         select(TableSession, Table)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             Table.restaurant_id == restaurant_id,
+            TableSession.status != SessionStatus.CLOSED
         )
     )
     row = result.first()
@@ -246,8 +247,9 @@ async def get_session_users(
         select(TableSession.id)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             Table.restaurant_id == restaurant_id,
+            TableSession.status != SessionStatus.CLOSED
         )
     )
     session_id = result.scalars().first()

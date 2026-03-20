@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import { staffService } from '@/lib/api/staff.service';
-import type { StaffResponse, StaffCreate, StaffRole } from '@/types/api.types';
+import type { StaffResponse, StaffCreate, StaffUpdate, StaffRole } from '@/types/api.types';
 
 const ROLES: { id: StaffRole, label: string, emoji: string }[] = [
   { id: 'waiter', label: 'Mesero', emoji: '🧑‍🍳' },
@@ -40,7 +40,14 @@ export default function StaffAdminPage() {
     setSaving(true);
     try {
       if (editing) {
-        const updated = await staffService.updateStaff(slug, editing.id, form);
+        const payload: Partial<StaffUpdate> = {
+          name: form.name,
+          role: form.role,
+        };
+        if (form.pin && form.pin.trim() !== '') {
+          payload.pin = form.pin;
+        }
+        const updated = await staffService.updateStaff(slug, editing.id, payload as StaffUpdate);
         setStaff(prev => prev.map(s => s.id === editing.id ? updated : s));
       } else {
         const created = await staffService.createStaff(slug, form);

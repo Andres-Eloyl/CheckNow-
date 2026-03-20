@@ -58,3 +58,13 @@ class StaffTokenResponse(BaseModel):
     staff_id: str
     name: str
     role: str
+
+class RestaurantMeResponse(BaseModel):
+    """Response schema for current restaurant profile."""
+    id: str
+    name: str
+    slug: str
+    email: EmailStr
+    phone: Optional[str] = None
+    country: str
+    is_active: bool

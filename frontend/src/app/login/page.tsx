@@ -7,10 +7,12 @@ import Link from 'next/link';
 import { authService } from '@/lib/api/auth.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { ApiError } from '@/lib/api/client';
+import { useToast } from '@/components/ui/Toast';
 
 export default function OwnerLoginPage() {
   const router = useRouter();
   const { setOwnerAuth } = useAuthStore();
+  const { toast } = useToast();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -18,9 +20,25 @@ export default function OwnerLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
+  const validate = (): boolean => {
+    if (!email.trim()) {
+      setError('El email es requerido');
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError('Formato de email inválido');
+      return false;
+    }
+    if (!password.trim()) {
+      setError('La contraseña es requerida');
+      return false;
+    }
+    return true;
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password.trim()) return;
+    if (!validate()) return;
 
     setLoading(true);
     setError(null);
@@ -34,6 +52,7 @@ export default function OwnerLoginPage() {
         slug: res.slug,
         email: email.trim(),
       });
+      toast(`Bienvenido ${res.slug}`, 'success');
       router.push(`/${res.slug}/dashboard`);
     } catch (err) {
       if (err instanceof ApiError) {
@@ -41,7 +60,7 @@ export default function OwnerLoginPage() {
         else if (err.status === 429) setError('Demasiados intentos. Espera un momento.');
         else setError(err.detail);
       } else {
-        setError('Error de conexión. Intenta de nuevo.');
+        toast('Error de conexión. Revisa tu internet.', 'error');
       }
       setLoading(false);
     }
