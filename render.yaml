@@ -1,0 +1,37 @@
+# render.yaml
+# Infrastructure as Code para desplegar CheckNow! en Render.com
+# Render detectará este archivo automáticamente cuando conectes tu GitHub.
+
+services:
+  - type: web
+    name: checknow-backend
+    env: python
+    region: ohio # Usa ohio o frankfurt según tu preferencia
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: ENVIRONMENT
+        value: production
+      - key: APP_NAME
+        value: "CheckNow!"
+      - key: PYTHON_VERSION
+        value: 3.12.0 # Asegura compatibilidad con FastAPI moderno
+      
+      # Variables críticas que DEBES llenar en el Dashboard de Render 
+      # (Pestaña 'Environment' de tu servicio 'checknow-backend')
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false # Aquí pondrás el URL de Upstash (ej. rediss://default:contraseña@servidor...)
+      - key: SECRET_KEY
+        sync: false 
+      - key: AES_KEY
+        sync: false
+      
+      # Sentry opcional
+      - key: SENTRY_DSN
+        sync: false

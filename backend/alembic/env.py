@@ -25,7 +25,14 @@ if config.config_file_name is not None:
 from app.core.config import get_settings
 settings = get_settings()
 
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+# Strip ?pgbouncer=true parameter (asyncpg doesn't support it)
+db_url = settings.DATABASE_URL
+if "?pgbouncer=true" in db_url:
+    db_url = db_url.replace("?pgbouncer=true", "")
+elif "&pgbouncer=true" in db_url:
+    db_url = db_url.replace("&pgbouncer=true", "")
+
+config.set_main_option("sqlalchemy.url", db_url)
 
 target_metadata = Base.metadata
 

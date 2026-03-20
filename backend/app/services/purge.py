@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.database import async_session_maker
+from app.core.database import async_session_factory
 from app.models.split import SplitAssignment
 from app.models.order import OrderItem
 from app.websockets.manager import ws_manager
@@ -76,7 +76,7 @@ async def run_purge_job():
             
             try:
                 # Use a fresh session dynamically
-                async with async_session_maker() as db:
+                async with async_session_factory() as db:
                     await purge_expired_splits(db)
             except Exception as e:
                 logger.error(f"Error during auto-purge cycle: {e}")

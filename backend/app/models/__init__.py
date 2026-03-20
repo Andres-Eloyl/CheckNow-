@@ -16,6 +16,7 @@ from app.models.notification import Notification
 from app.models.loyalty import LoyaltyAccount
 from app.models.analytics import AnalyticsEvent
 from app.models.file_storage import FileStorage
+from app.models.cross_sell import CrossSellRule
 
 __all__ = [
     "Restaurant",
@@ -37,4 +38,5 @@ __all__ = [
     "LoyaltyAccount",
     "AnalyticsEvent",
     "FileStorage",
+    "CrossSellRule",
 ]

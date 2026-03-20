@@ -6,7 +6,7 @@ CRUD operations for restaurant tables and QR code generation.
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 from typing import List
 import qrcode
 import io
@@ -15,6 +15,8 @@ from app.core.database import get_db
 from app.core.dependencies import get_current_restaurant, get_restaurant_id
 from app.core.config import get_settings
 from app.models.table import Table
+from app.models.restaurant import Restaurant
+from app.models.subscription import SubscriptionPlan
 from app.schemas.table import TableCreate, TableUpdate, TableResponse
 
 settings = get_settings()
@@ -56,6 +58,27 @@ async def create_table(
     db: AsyncSession = Depends(get_db),
 ):
     """Create a new table."""
+    # ── Plan limit enforcement ──
+    rest_result = await db.execute(
+        select(Restaurant).where(Restaurant.id == restaurant_id)
+    )
+    restaurant = rest_result.scalar_one_or_none()
+    if restaurant and restaurant.plan_id:
+        plan_result = await db.execute(
+            select(SubscriptionPlan).where(SubscriptionPlan.id == restaurant.plan_id)
+        )
+        plan = plan_result.scalar_one_or_none()
+        if plan:
+            count_result = await db.execute(
+                select(func.count()).select_from(Table).where(Table.restaurant_id == restaurant_id)
+            )
+            current_count = count_result.scalar() or 0
+            if current_count >= plan.max_tables:
+                raise HTTPException(
+                    status_code=402,
+                    detail=f"Has alcanzado el límite de {plan.max_tables} mesas de tu plan '{plan.name}'. Actualiza tu plan para agregar más.",
+                )
+
     # Check for duplicate number
     existing = await db.execute(
         select(Table).where(

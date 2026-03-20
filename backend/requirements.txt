@@ -34,7 +34,7 @@ minio==7.2.12
 
 # HTTP Client (for BCV API)
 httpx==0.28.1
-
+beautifulsoup4==4.12.3
 # Sentry
 sentry-sdk[fastapi]==2.19.2
 
