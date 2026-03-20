@@ -1,14 +1,15 @@
 "use client";
 
 import { motion } from 'framer-motion';
-import { CATEGORIES } from '@/lib/mocks/data';
+import type { MenuCategoryFull } from '@/types/api.types';
 
 interface CategoriesTabBarProps {
+  categories: MenuCategoryFull[];
   activeCategory: string;
   setActiveCategory: (id: string) => void;
 }
 
-export function CategoriesTabBar({ activeCategory, setActiveCategory }: CategoriesTabBarProps) {
+export function CategoriesTabBar({ categories, activeCategory, setActiveCategory }: CategoriesTabBarProps) {
   return (
     <nav className="relative z-10 bg-slate-50 dark:bg-[#0A0A0B] border-b border-slate-200/60 dark:border-white/5 py-3 shadow-[0_10px_20px_-10px_rgba(0,0,0,0.02)] overflow-hidden">
       <div className="relative">
@@ -20,7 +21,7 @@ export function CategoriesTabBar({ activeCategory, setActiveCategory }: Categori
           className="flex overflow-x-auto hide-scrollbar px-5 gap-2.5 snap-x snap-proximity scroll-smooth"
           style={{ WebkitOverflowScrolling: 'touch' }}
         >
-          {CATEGORIES.map(cat => {
+          {categories.map(cat => {
             const isActive = activeCategory === cat.id;
             return (
               <button
@@ -40,7 +41,7 @@ export function CategoriesTabBar({ activeCategory, setActiveCategory }: Categori
                     transition={{ type: "spring", stiffness: 450, damping: 30 }}
                   />
                 )}
-                <span className="relative z-10">{cat.name}</span>
+                <span className="relative z-10">{cat.icon ? `${cat.icon} ` : ''}{cat.name}</span>
               </button>
             )
           })}

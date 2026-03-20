@@ -19,6 +19,7 @@ export const metadata: Metadata = {
 
 import { OrderProvider } from "@/context/OrderContext";
 import { ConfigProvider } from "@/context/ConfigContext";
+import { SessionProvider } from "@/context/SessionContext";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { LoadingSpinner } from "@/components/ui/LoadingSpinner";
 import { ToastProvider } from "@/components/ui/Toast";
@@ -47,13 +48,15 @@ export default function RootLayout({
       >
         <ConfigProvider>
           <ToastProvider>
-            <OrderProvider>
-              <ErrorBoundary>
-                <Suspense fallback={<div className="h-[100dvh] flex items-center justify-center"><LoadingSpinner /></div>}>
-                  {children}
-                </Suspense>
-              </ErrorBoundary>
-            </OrderProvider>
+            <SessionProvider>
+              <OrderProvider>
+                <ErrorBoundary>
+                  <Suspense fallback={<div className="h-[100dvh] flex items-center justify-center"><LoadingSpinner /></div>}>
+                    {children}
+                  </Suspense>
+                </ErrorBoundary>
+              </OrderProvider>
+            </SessionProvider>
           </ToastProvider>
         </ConfigProvider>
       </body>

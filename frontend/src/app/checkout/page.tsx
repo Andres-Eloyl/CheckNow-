@@ -4,26 +4,36 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useOrder } from '@/hooks/useOrder';
+import { useCheckout } from '@/hooks/useCheckout';
 import { useConfig } from '@/context/ConfigContext';
+import { useSession } from '@/context/SessionContext';
 import { TipSelector } from '@/components/checkout/TipSelector';
 import { PaymentMethodsAccordion, PaymentMethod } from '@/components/checkout/PaymentMethodsAccordion';
 import { APP_CONSTANTS } from '@/lib/constants';
+import type { PaymentMethod as ApiPaymentMethod } from '@/types/api.types';
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { tableTotal, clearCart } = useOrder();
+  const { tableTotal } = useOrder();
   const { config } = useConfig();
+  const { clearSession } = useSession();
+  const { summary, exchangeRate, fetchSummary, fetchExchangeRate, submitPayment, loading: checkoutLoading, error: checkoutError } = useCheckout();
   
-  // Note: For a fully integrated app we could read exactly how
-  // the user opted to split. We default to TableTotal to not break the UI flow.
-  const subtotal = tableTotal > 0 ? tableTotal : 42.50;
-
   const [selectedTip, setSelectedTip] = useState<number | null>(null);
   const [expandedPayment, setExpandedPayment] = useState<PaymentMethod>('transfer');
   const [refNumber, setRefNumber] = useState('');
   const [paymentState, setPaymentState] = useState<'idle' | 'processing' | 'success'>('idle');
 
-  // Set default tip when component loads based on config
+  // Fetch checkout summary and exchange rate on mount
+  useEffect(() => {
+    fetchSummary();
+    fetchExchangeRate();
+  }, [fetchSummary, fetchExchangeRate]);
+
+  // Use API summary or fallback to tableTotal
+  const subtotal = summary?.total_before_tip ?? (tableTotal > 0 ? tableTotal : 0);
+
+  // Set default tip when component loads
   useEffect(() => {
     if (config.tipsEnabled && config.tipPercentages.length > 0 && selectedTip === null) {
       setSelectedTip(config.tipPercentages[1] || config.tipPercentages[0]);
@@ -36,20 +46,28 @@ export default function CheckoutPage() {
   const tipAmount = (selectedTip !== null && config.tipsEnabled) ? subtotal * (selectedTip / 100) : 0; 
   const grandTotal = subtotal + tipAmount;
 
-  const handleValidateTransfer = () => {
-    if (!refNumber) return;
+  const handlePay = async () => {
     setPaymentState('processing');
-    setTimeout(() => {
-       setPaymentState('success')
-    }, APP_CONSTANTS.PAYMENT_PROCESSING_MS); 
-  };
+    try {
+      const methodMap: Record<string, ApiPaymentMethod> = {
+        transfer: 'pago_movil',
+        terminal: 'tarjeta',
+      };
 
-  const handleTerminalRequest = () => {
-    setPaymentState('processing');
-    setExpandedPayment('terminal');
-    setTimeout(() => {
-       setPaymentState('success')
-    }, APP_CONSTANTS.PAYMENT_PROCESSING_MS); 
+      await submitPayment({
+        amount_usd: grandTotal,
+        currency: exchangeRate ? 'VES' : 'USD',
+        method: methodMap[expandedPayment ?? 'transfer'] || 'pago_movil',
+        tip_amount: tipAmount,
+        reference_code: refNumber.trim() || undefined,
+        exchange_rate: exchangeRate?.usd_to_ves,
+        amount_local: exchangeRate ? grandTotal * exchangeRate.usd_to_ves : undefined,
+      });
+
+      setPaymentState('success');
+    } catch {
+      setPaymentState('idle');
+    }
   };
 
   // ----- Success Screen -----
@@ -75,7 +93,7 @@ export default function CheckoutPage() {
           transition={{ delay: 0.2 }}
           className="text-3xl font-black mb-4 tracking-tight"
         >
-          {expandedPayment === 'transfer' ? '¡Pago Confirmado!' : '¡Terminal en Camino!'}
+          {expandedPayment === 'transfer' ? '¡Pago Enviado!' : '¡Terminal en Camino!'}
         </motion.h1>
         
         <motion.p 
@@ -85,8 +103,8 @@ export default function CheckoutPage() {
           className="text-slate-500 dark:text-slate-400 text-lg max-w-sm mb-12"
         >
           {expandedPayment === 'transfer' 
-            ? 'Hemos recibido tu transferencia. Gracias por visitar CheckNow.' 
-            : 'Hemos bloqueado tus ítems. El mesero va en camino con la terminal a la Mesa 4.'}
+            ? 'Tu pago está pendiente de verificación por el staff. ¡Gracias!' 
+            : 'Hemos bloqueado tus ítems. El mesero va en camino con la terminal.'}
         </motion.p>
 
         <motion.button
@@ -94,7 +112,7 @@ export default function CheckoutPage() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.6 }}
           onClick={() => {
-            clearCart();
+            clearSession();
             router.push('/join');
           }}
           className="text-primary font-bold text-lg hover:underline decoration-2 underline-offset-4 outline-none focus-visible:ring-4 focus-visible:ring-primary/40 rounded-lg px-2"
@@ -119,7 +137,7 @@ export default function CheckoutPage() {
              <span className="material-symbols-outlined text-3xl text-primary animate-pulse">lock</span>
           </div>
         </div>
-        <h1 className="text-2xl font-black mb-2 tracking-tight">Procesando Seguro</h1>
+        <h1 className="text-2xl font-black mb-2 tracking-tight">Procesando Pago</h1>
         <p className="text-slate-500 dark:text-slate-400">Por favor, no cierres esta pantalla.</p>
       </main>
     );
@@ -145,11 +163,40 @@ export default function CheckoutPage() {
               <p className="text-slate-500 dark:text-slate-400 text-[15px] font-medium">Subtotal de orden</p>
               <p className="text-slate-900 dark:text-white font-black text-[18px] tracking-tight">${subtotal.toFixed(2)}</p>
             </div>
+
+            {/* Tax & service charge from API */}
+            {summary && (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-slate-400 text-[13px]">Impuesto</p>
+                  <p className="text-slate-500 text-[13px] font-semibold">+${summary.tax.toFixed(2)}</p>
+                </div>
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-slate-400 text-[13px]">Servicio</p>
+                  <p className="text-slate-500 text-[13px] font-semibold">+${summary.service_charge.toFixed(2)}</p>
+                </div>
+              </>
+            )}
+
             <div className="h-px bg-slate-200 dark:bg-white/10 w-full mb-3"></div>
             {config.tipsEnabled && selectedTip !== null && selectedTip > 0 && (
               <div className="flex items-center justify-between text-[var(--color-primary)]">
                  <p className="text-[15px] font-bold">Propina ({selectedTip}%)</p>
                  <p className="font-bold">+${tipAmount.toFixed(2)}</p>
+              </div>
+            )}
+
+            {/* Exchange rate display */}
+            {exchangeRate && (
+              <div className="mt-4 p-3 rounded-2xl bg-blue-50 dark:bg-blue-500/10 border border-blue-200 dark:border-blue-500/20">
+                <div className="flex items-center justify-between">
+                  <span className="text-[13px] font-medium text-blue-700 dark:text-blue-400">Tasa BCV</span>
+                  <span className="text-[13px] font-bold text-blue-700 dark:text-blue-300">1 USD = {exchangeRate.usd_to_ves.toFixed(2)} Bs</span>
+                </div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-[13px] font-medium text-blue-700 dark:text-blue-400">Total en Bs</span>
+                  <span className="text-[15px] font-black text-blue-700 dark:text-blue-300">Bs {(grandTotal * exchangeRate.usd_to_ves).toFixed(2)}</span>
+                </div>
               </div>
             )}
           </div>
@@ -161,8 +208,15 @@ export default function CheckoutPage() {
             setExpandedPayment={setExpandedPayment} 
             refNumber={refNumber} 
             setRefNumber={setRefNumber} 
-            onTerminalRequest={handleTerminalRequest} 
+            onTerminalRequest={handlePay} 
           />
+
+          {/* Error display */}
+          {checkoutError && (
+            <div className="mx-5 mt-4 p-3 rounded-2xl bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-[13px] font-medium text-center">
+              {checkoutError}
+            </div>
+          )}
         </main>
 
         {/* Bottom Action Bar */}
@@ -173,8 +227,8 @@ export default function CheckoutPage() {
               <span className="text-slate-900 dark:text-white text-[32px] font-black tracking-tighter leading-none">${grandTotal.toFixed(2)}</span>
             </div>
           <button 
-            onClick={expandedPayment === 'transfer' ? handleValidateTransfer : handleTerminalRequest}
-            disabled={expandedPayment === 'transfer' && !refNumber.trim()}
+            onClick={handlePay}
+            disabled={(expandedPayment === 'transfer' && !refNumber.trim()) || checkoutLoading}
             className="w-full bg-primary hover:bg-primary/95 disabled:opacity-40 disabled:active:scale-100 text-white font-bold text-[18px] h-14 rounded-2xl shadow-[0_8px_24px_rgba(244,123,37,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 outline-none focus-visible:ring-4 focus-visible:ring-primary/40"
           >
             <span className="material-symbols-outlined text-[20px]">

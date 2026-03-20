@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { CATEGORIES, MOCK_MENU } from '@/lib/mocks/data';
-import { MenuItem } from '@/types';
+import { useMenu } from '@/hooks/useMenu';
+import { useSession } from '@/context/SessionContext';
+import type { MenuItemResponse } from '@/types/api.types';
 import Link from 'next/link';
 import { useOrder } from '@/hooks/useOrder';
 
@@ -12,19 +13,32 @@ import { CategoriesTabBar } from '@/components/menu/CategoriesTabBar';
 import { MenuCard } from '@/components/menu/MenuCard';
 import { ItemDetailsSheet } from '@/components/menu/ItemDetailsSheet';
 import { BottomNavigation } from '@/components/ui/BottomNavigation';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 /**
- * AI Context: Main interactive menu page.
- * Displays horizontal scrolling categories, vertical standard menu items grouped by tags,
- * and a floating action button (FAB) for the cart. It relies on `MOCK_MENU` for now.
+ * Main interactive menu page.
+ * Fetches categories and items from the API via useMenu hook.
  */
 export default function MenuPage() {
-  const [activeCategory, setActiveCategory] = useState(CATEGORIES[0].id);
-  const [selectedItem, setSelectedItem] = useState<MenuItem | null>(null);
+  const { slug } = useSession();
+  const { categories, loading, error, refetch } = useMenu(slug);
+  const [activeCategory, setActiveCategory] = useState<string>('');
+  const [selectedItem, setSelectedItem] = useState<MenuItemResponse | null>(null);
   const { globalCartCount } = useOrder();
 
-  const popularEntrances = MOCK_MENU.filter(m => m.tag === 'Entradas Populares');
-  const chefSuggestions = MOCK_MENU.filter(m => m.tag === 'Sugerencias del Chef');
+  // Set first category as active when data loads
+  useEffect(() => {
+    if (categories.length > 0 && !activeCategory) {
+      setActiveCategory(categories[0].id);
+    }
+  }, [categories, activeCategory]);
+
+  // Get items for the active category
+  const activeCategoryData = categories.find(c => c.id === activeCategory);
+  const activeCategoryItems = activeCategoryData?.items.filter(i => i.is_available) || [];
+
+  // Featured items across all categories
+  const featuredItems = categories.flatMap(c => c.items.filter(i => i.is_featured && i.is_available));
 
   // Staggered list variants
   const containerVariants: import('framer-motion').Variants = {
@@ -51,46 +65,83 @@ export default function MenuPage() {
       <div className="sticky top-0 z-50 flex flex-col w-full">
         <MenuHeader />
         <CategoriesTabBar 
+          categories={categories}
           activeCategory={activeCategory} 
           setActiveCategory={setActiveCategory} 
         />
       </div>
 
       <main className="flex-1 p-5 pb-[140px] max-w-2xl mx-auto w-full">
-        <motion.div 
-          variants={containerVariants}
-          initial="hidden"
-          animate="show"
-          className="space-y-4"
-        >
-          {/* Section: Entradas Populares */}
-          <motion.div variants={itemVariants} className="flex items-center gap-2 mb-4 pt-2">
-            <div className="bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 p-1.5 rounded-lg">
-              <span className="material-symbols-outlined text-[20px] block">local_fire_department</span>
-            </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Entradas Populares</h3>
-          </motion.div>
-          
-          <div className="grid gap-4">
-            {popularEntrances.map(item => (
-               <MenuCard key={item.id} item={item} onOpen={setSelectedItem} variants={itemVariants} />
-            ))}
+        {loading ? (
+          <div className="flex items-center justify-center h-[50vh]">
+            <LoadingSpinner />
           </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center h-[50vh] text-center px-4">
+            <div className="size-20 bg-rose-100 dark:bg-rose-500/20 rounded-full flex items-center justify-center mb-4">
+              <span className="material-symbols-outlined text-[36px] text-rose-500">wifi_off</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2">Error al cargar el menú</h2>
+            <p className="text-slate-500 dark:text-slate-400 mb-6 max-w-[280px]">{error}</p>
+            <button 
+              onClick={refetch}
+              className="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-full shadow-lg shadow-primary/30 transition-all active:scale-95"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : (
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="show"
+            className="space-y-4"
+          >
+            {/* Featured items section */}
+            {featuredItems.length > 0 && (
+              <>
+                <motion.div variants={itemVariants} className="flex items-center gap-2 mb-4 pt-2">
+                  <div className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 p-1.5 rounded-lg">
+                    <span className="material-symbols-outlined text-[20px] block">star</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Destacados</h3>
+                </motion.div>
+                <div className="grid gap-4">
+                  {featuredItems.map(item => (
+                    <MenuCard key={item.id} item={item} onOpen={setSelectedItem} variants={itemVariants} />
+                  ))}
+                </div>
+              </>
+            )}
 
-          {/* Section: Sugerencias del Chef */}
-          <motion.div variants={itemVariants} className="flex items-center gap-2 mb-4 pt-8">
-            <div className="bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 p-1.5 rounded-lg">
-              <span className="material-symbols-outlined text-[20px] block">star</span>
-            </div>
-            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Sugerencias del Chef</h3>
+            {/* Active category items */}
+            {activeCategoryData && activeCategoryItems.length > 0 && (
+              <>
+                <motion.div variants={itemVariants} className="flex items-center gap-2 mb-4 pt-6">
+                  <div className="bg-orange-100 dark:bg-orange-500/20 text-orange-600 dark:text-orange-400 p-1.5 rounded-lg">
+                    <span className="material-symbols-outlined text-[20px] block">restaurant_menu</span>
+                  </div>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {activeCategoryData.icon ? `${activeCategoryData.icon} ` : ''}{activeCategoryData.name}
+                  </h3>
+                </motion.div>
+                <div className="grid gap-4">
+                  {activeCategoryItems.map(item => (
+                    <MenuCard key={item.id} item={item} onOpen={setSelectedItem} variants={itemVariants} />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* Empty state */}
+            {activeCategoryItems.length === 0 && featuredItems.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-[40vh] text-center">
+                <span className="material-symbols-outlined text-[48px] text-slate-300 dark:text-slate-600 mb-4">menu_book</span>
+                <p className="text-slate-500 dark:text-slate-400">No hay ítems disponibles en esta categoría</p>
+              </div>
+            )}
           </motion.div>
-          
-          <div className="grid gap-4">
-            {chefSuggestions.map(item => (
-              <MenuCard key={item.id} item={item} onOpen={setSelectedItem} variants={itemVariants} />
-            ))}
-          </div>
-        </motion.div>
+        )}
       </main>
 
       {/* Floating Action Button (Cart) */}

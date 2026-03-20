@@ -1,24 +1,27 @@
 "use client";
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { MenuItem } from '@/types';
+import type { MenuItemResponse } from '@/types/api.types';
 import { useOrder } from '@/hooks/useOrder';
 import { useState, useEffect } from 'react';
 
 interface ItemDetailsSheetProps {
-  item: MenuItem | null;
+  item: MenuItemResponse | null;
   onClose: () => void;
 }
 
 export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
   const [quantity, setQuantity] = useState(1);
-  const [modifiers, setModifiers] = useState<string[]>([]);
-  const { addItem } = useOrder();
+  const [selectedModifiers, setSelectedModifiers] = useState<string[]>([]);
+  const [notes, setNotes] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+  const { addOrderItem } = useOrder();
 
   useEffect(() => {
     if (item) {
       setQuantity(1);
-      setModifiers([]);
+      setSelectedModifiers([]);
+      setNotes('');
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
@@ -32,21 +35,35 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
   if (!item) return null;
 
   const toggleModifier = (mod: string) => {
-    setModifiers(prev => 
+    setSelectedModifiers(prev => 
       prev.includes(mod) ? prev.filter(m => m !== mod) : [...prev, mod]
     );
   };
 
-  const handleAddToCart = () => {
-    addItem({
-      id: Math.random().toString(36).substr(2, 9),
-      menuItem: item,
-      userId: '1',
-      quantity,
-      modifiers
-    });
-    onClose();
+  const handleAddToCart = async () => {
+    setIsAdding(true);
+    try {
+      await addOrderItem({
+        menu_item_id: item.id,
+        quantity,
+        modifiers: selectedModifiers.length > 0 ? selectedModifiers : undefined,
+        notes: notes.trim() || undefined,
+      });
+      onClose();
+    } catch {
+      // Error is handled by the hook/context (sets state.error)
+    } finally {
+      setIsAdding(false);
+    }
   };
+
+  const placeholderImage = 'https://placehold.co/800x600/1a1a1b/666?text=🍽️';
+
+  // Compute total with modifier extra prices
+  const modifierExtras = item.modifiers
+    .filter(m => selectedModifiers.includes(m.name))
+    .reduce((sum, m) => sum + m.extra_price, 0);
+  const totalPrice = (item.price_usd + modifierExtras) * quantity;
 
   return (
     <AnimatePresence>
@@ -83,7 +100,7 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
             </div>
 
             <div className="relative h-[35%] shrink-0 bg-slate-100 dark:bg-neutral-900 border-b border-slate-100 dark:border-white/5">
-              <img src={item.image} className="w-full h-full object-cover" alt="" aria-hidden="true" />
+              <img src={item.image_url || placeholderImage} className="w-full h-full object-cover" alt="" aria-hidden="true" />
               <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white dark:from-[#0A0A0B] to-transparent pointer-events-none"></div>
               <button 
                 type="button"
@@ -98,56 +115,79 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
             <div className="flex-1 overflow-y-auto px-6 py-4 pb-32 overscroll-contain">
               <div className="flex justify-between items-start gap-4">
                 <h2 id="modal-title" className="text-[26px] lg:text-[32px] font-black text-slate-900 dark:text-white leading-tight tracking-tight">{item.name}</h2>
-                <span className="text-[26px] font-black text-primary shrink-0 -mt-1 tracking-tight">${item.price.toFixed(2)}</span>
+                <span className="text-[26px] font-black text-primary shrink-0 -mt-1 tracking-tight">${item.price_usd.toFixed(2)}</span>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 mt-2 text-[15px] lg:text-[17px] leading-relaxed max-w-prose">{item.description}</p>
+              <p className="text-slate-500 dark:text-slate-400 mt-2 text-[15px] lg:text-[17px] leading-relaxed max-w-prose">{item.description || ''}</p>
               
-              <div className="mt-8 border-t border-slate-100 dark:border-white/5 pt-6">
-                <div className="flex justify-between items-center mb-5">
-                  <h3 className="font-bold text-[18px] text-slate-900 dark:text-white flex items-center gap-2">
-                    <span className="material-symbols-outlined text-[20px] text-slate-400">tune</span>
-                    ¿Alguna preferencia?
-                  </h3>
-                  <span className="bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Opcional</span>
-                </div>
-                
-                <div className="flex flex-col gap-3.5">
-                  {['Sin cebolla', 'Término medio', 'Extra queso (+$1.50)'].map(mod => {
-                    const isChecked = modifiers.includes(mod);
-                    return (
-                      <label key={mod} className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer active:scale-[0.98] ${
-                        isChecked 
-                        ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-[0_4px_12px_-4px_rgba(244,123,37,0.2)]' 
-                        : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
-                      }`}>
-                        <input 
-                          type="checkbox" 
-                          className="sr-only" 
-                          checked={isChecked}
-                          onChange={() => toggleModifier(mod)}
-                          aria-label={`Seleccionar ${mod}`}
-                        />
-                        <div className={`w-6 h-6 rounded-full flex flex-shrink-0 items-center justify-center transition-all ${
-                          isChecked ? 'bg-primary scale-110' : 'bg-slate-200 dark:bg-neutral-700'
+              {/* Modifiers from API */}
+              {item.modifiers.length > 0 && (
+                <div className="mt-8 border-t border-slate-100 dark:border-white/5 pt-6">
+                  <div className="flex justify-between items-center mb-5">
+                    <h3 className="font-bold text-[18px] text-slate-900 dark:text-white flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[20px] text-slate-400">tune</span>
+                      ¿Alguna preferencia?
+                    </h3>
+                    <span className="bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Opcional</span>
+                  </div>
+                  
+                  <div className="flex flex-col gap-3.5">
+                    {item.modifiers.filter(m => m.is_active).map(mod => {
+                      const isChecked = selectedModifiers.includes(mod.name);
+                      return (
+                        <label key={mod.id} className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer active:scale-[0.98] ${
+                          isChecked 
+                          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-[0_4px_12px_-4px_rgba(244,123,37,0.2)]' 
+                          : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
                         }`}>
-                          {isChecked && (
-                            <motion.span 
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: "spring", stiffness: 500, damping: 30 }}
-                              className="material-symbols-outlined text-white text-[14px] font-bold"
-                            >
-                              check
-                            </motion.span>
-                          )}
-                        </div>
-                        <span className={`font-semibold text-[15px] transition-colors ${
-                          isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'
-                        }`}>{mod}</span>
-                      </label>
-                    )
-                  })}
+                          <input 
+                            type="checkbox" 
+                            className="sr-only" 
+                            checked={isChecked}
+                            onChange={() => toggleModifier(mod.name)}
+                            aria-label={`Seleccionar ${mod.name}`}
+                          />
+                          <div className={`w-6 h-6 rounded-full flex flex-shrink-0 items-center justify-center transition-all ${
+                            isChecked ? 'bg-primary scale-110' : 'bg-slate-200 dark:bg-neutral-700'
+                          }`}>
+                            {isChecked && (
+                              <motion.span 
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                                className="material-symbols-outlined text-white text-[14px] font-bold"
+                              >
+                                check
+                              </motion.span>
+                            )}
+                          </div>
+                          <span className={`font-semibold text-[15px] transition-colors flex-1 ${
+                            isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'
+                          }`}>
+                            {mod.name}
+                            {mod.extra_price > 0 && (
+                              <span className="text-primary ml-1">(+${mod.extra_price.toFixed(2)})</span>
+                            )}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
                 </div>
+              )}
+
+              {/* Notes field */}
+              <div className="mt-6">
+                <label className="font-bold text-[15px] text-slate-900 dark:text-white mb-2 block">
+                  Notas especiales
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Ej: Término medio, sin picante..."
+                  maxLength={200}
+                  rows={2}
+                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-[14px] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
+                />
               </div>
 
               <div className="mt-8 flex items-center justify-between">
@@ -190,15 +230,16 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleAddToCart}
-                className="w-full h-16 bg-primary text-white font-bold text-[18px] rounded-[20px] shadow-[0_8px_32px_rgb(244,123,37,0.35)] flex justify-between px-6 items-center transition-all outline-none focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0A0A0B] overflow-hidden relative group"
+                disabled={isAdding}
+                className="w-full h-16 bg-primary text-white font-bold text-[18px] rounded-[20px] shadow-[0_8px_32px_rgb(244,123,37,0.35)] flex justify-between px-6 items-center transition-all outline-none focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0A0A0B] overflow-hidden relative group disabled:opacity-70"
               >
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1.5s_infinite]"></div>
                 <span className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[22px] mb-0.5" style={{fontVariationSettings: "'FILL' 1"}}>shopping_bag</span>
-                  Agregar Orden
+                  {isAdding ? 'Agregando...' : 'Agregar Orden'}
                 </span>
                 <div className="bg-black/20 dark:bg-black/30 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 font-black">
-                  ${(item.price * quantity).toFixed(2)}
+                  ${totalPrice.toFixed(2)}
                 </div>
               </motion.button>
             </div>

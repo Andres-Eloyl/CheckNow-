@@ -1,35 +1,64 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Avatar } from '@/components/ui/Avatar';
+import { useSession } from '@/context/SessionContext';
+import { sessionService } from '@/lib/api/session.service';
+import { ApiError } from '@/lib/api/client';
 
 /**
- * AI Context: The onboarding/join page where users input their name/alias
- * after scanning the QR code on the table.
- * Currently redirects directly to `/menu` on submit.
+ * Join page where users input their name/alias after scanning the table QR code.
+ * Calls sessionService.joinSession to register the user in the session.
  */
 export default function JoinPage() {
   const [name, setName] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const { setSessionData, slug: currentSlug } = useSession();
 
-  const handleJoin = (e: React.FormEvent) => {
+  // Extract slug and token from URL params (from QR code scan)
+  const slug = searchParams.get('slug') || currentSlug || '';
+  const token = searchParams.get('token') || '';
+
+  const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name.trim()) {
+    if (!name.trim()) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Join the session via API
+      const user = await sessionService.joinSession(slug, token, { alias: name.trim() });
+
+      // Fetch full session data
+      const session = await sessionService.getSession(slug, token);
+
+      // Update global session context
+      setSessionData(session, user, slug, token);
+
+      // Navigate to menu
       router.push('/menu');
+    } catch (err) {
+      if (err instanceof ApiError) {
+        setError(err.detail);
+      } else {
+        setError('Error al unirse a la mesa. Intenta de nuevo.');
+      }
+      setLoading(false);
     }
   };
 
-  // Animation variants for staggered entrance
+  // Animation variants
   const containerVariants: import('framer-motion').Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2
-      }
+      transition: { staggerChildren: 0.1, delayChildren: 0.2 }
     }
   };
 
@@ -73,7 +102,6 @@ export default function JoinPage() {
           <motion.div variants={itemVariants} className="flex flex-col items-center gap-6 w-full">
             
             <div className="relative h-32 w-32 group">
-              {/* Pulsing glow background behind avatar */}
               <div className="absolute inset-0 rounded-full bg-primary/30 blur-xl animate-[pulse_3s_ease-in-out_infinite] transition-all duration-700" />
               
               <AnimatePresence mode="popLayout">
@@ -88,16 +116,6 @@ export default function JoinPage() {
                   <Avatar alias={name} size="xl" />
                 </motion.div>
               </AnimatePresence>
-              
-              <motion.button 
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                className="absolute bottom-0 right-0 z-20 bg-background-light dark:bg-background-dark border-2 border-primary w-11 h-11 rounded-full flex items-center justify-center shadow-lg text-primary hover:bg-primary hover:text-white transition-colors"
-                aria-label="Cambiar foto de perfil"
-                type="button"
-              >
-                <span className="material-symbols-outlined text-xl">add_a_photo</span>
-              </motion.button>
             </div>
 
             <div className="text-center space-y-2">
@@ -129,9 +147,24 @@ export default function JoinPage() {
                   placeholder="Escribe tu nombre o apodo"
                   name="username"
                   autoComplete="off"
+                  disabled={loading}
                 />
               </div>
             </div>
+
+            {/* Error message */}
+            <AnimatePresence>
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="p-3 rounded-2xl bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 text-[13px] font-medium text-center"
+                >
+                  {error}
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             <div className="p-4 rounded-2xl bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group/card shadow-slate-200/50 dark:shadow-none">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary/5 to-primary/0 translate-x-[-100%] group-hover/card:translate-x-[100%] transition-transform duration-1000"></div>
@@ -140,7 +173,9 @@ export default function JoinPage() {
               </div>
               <div className="relative z-10">
                 <p className="text-sm font-bold text-slate-900 dark:text-white">Mesa Reservada</p>
-                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">Restaurante "El Círculo" • Mesa #4</p>
+                <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {slug ? `${slug}` : 'Restaurante'} {token ? `• Sesión activa` : ''}
+                </p>
               </div>
             </div>
           </motion.form>
@@ -155,14 +190,14 @@ export default function JoinPage() {
           <motion.button 
             type="submit"
             onClick={handleJoin}
-            disabled={!name.trim()}
-            whileHover={name.trim() ? { scale: 1.02 } : {}}
-            whileTap={name.trim() ? { scale: 0.98 } : {}}
+            disabled={!name.trim() || loading}
+            whileHover={name.trim() && !loading ? { scale: 1.02 } : {}}
+            whileTap={name.trim() && !loading ? { scale: 0.98 } : {}}
             className="group w-full h-14 bg-primary text-white font-bold text-lg rounded-2xl flex items-center justify-center gap-2 transition-all outline-none shadow-[0_8px_30px_rgb(244,123,37,0.3)] disabled:shadow-none disabled:bg-slate-200 dark:disabled:bg-white/10 disabled:text-slate-400 dark:disabled:text-slate-500 focus:ring-4 focus:ring-primary/30"
             aria-label="Unirse a la mesa"
           >
-            <span>Unirme a la Mesa #4</span>
-            <span className={`text-xl transition-all duration-300 ${name.trim() ? 'translate-x-0 opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1' : '-translate-x-4 opacity-0'}`}>🚀</span>
+            <span>{loading ? 'Uniendo...' : 'Unirme a la Mesa'}</span>
+            <span className={`text-xl transition-all duration-300 ${name.trim() && !loading ? 'translate-x-0 opacity-100 group-hover:translate-x-1 group-hover:-translate-y-1' : '-translate-x-4 opacity-0'}`}>🚀</span>
           </motion.button>
           
           <p className="text-center text-xs font-medium text-slate-500 dark:text-slate-500 mt-4">

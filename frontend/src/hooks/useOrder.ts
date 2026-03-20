@@ -1,16 +1,17 @@
 "use client";
 
-import { useContext, useCallback } from 'react';
+import { useContext, useCallback, useMemo } from 'react';
 import { OrderContext } from '@/context/OrderContext';
-import { OrderItem } from '@/types';
+import { useSession } from '@/context/SessionContext';
+import type { OrderItemCreate, OrderConfirmResponse } from '@/types/api.types';
 
 /**
- * AI Context: Custom hook to interact with the global `OrderContext`.
- * Exposes methods to add/remove/update items and computed derived states
- * such as the local user's cart vs the table's total cart.
+ * Custom hook to interact with the global OrderContext.
+ * Exposes methods to add/remove items, confirm orders, and computed derived states.
+ * Automatically injects slug and session token from SessionContext.
  *
- * @returns Object with state arrays, derived totals, and dispatcher functions.
- * @throws {Error} if used outside of `OrderProvider`.
+ * @returns Object with state, derived totals, and action functions.
+ * @throws {Error} if used outside of OrderProvider or SessionProvider.
  */
 export function useOrder() {
   const context = useContext(OrderContext);
@@ -18,49 +19,79 @@ export function useOrder() {
     throw new Error('useOrder must be used within an OrderProvider');
   }
 
-  const { state, dispatch } = context;
+  const { session, currentUser, slug, sessionToken } = useSession();
+  const { state, fetchOrders, addItem, removeItem, confirmOrders } = context;
 
-  /** Adds an item to the global cart. Handles incrementing quantity if exact item matched. */
-  const addItem = useCallback((item: OrderItem) => {
-    dispatch({ type: 'ADD_ITEM', payload: item });
-  }, [dispatch]);
+  /** Fetch all orders from the API. */
+  const loadOrders = useCallback(async () => {
+    if (!slug || !sessionToken) return;
+    await fetchOrders(slug, sessionToken);
+  }, [slug, sessionToken, fetchOrders]);
 
-  /** Removes a specific item entry by its unique instance ID. */
-  const removeItem = useCallback((id: string) => {
-    dispatch({ type: 'REMOVE_ITEM', payload: id });
-  }, [dispatch]);
+  /** Add an item to the cart via the API. */
+  const addOrderItem = useCallback(async (data: OrderItemCreate) => {
+    if (!slug || !sessionToken) throw new Error('No hay sesión activa');
+    return addItem(slug, sessionToken, data);
+  }, [slug, sessionToken, addItem]);
 
-  /** Updates the quantity of a specific item entry. Delta can be positive or negative. */
-  const updateQuantity = useCallback((id: string, delta: number) => {
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id, delta } });
-  }, [dispatch]);
-  
-  /** Entirely clears the cart. Useful for post-checkout cleanup. */
-  const clearCart = useCallback(() => {
-    dispatch({ type: 'CLEAR_CART' });
-  }, [dispatch]);
+  /** Remove an item from the cart via the API. */
+  const removeOrderItem = useCallback(async (orderId: string) => {
+    if (!slug || !sessionToken) throw new Error('No hay sesión activa');
+    return removeItem(slug, sessionToken, orderId);
+  }, [slug, sessionToken, removeItem]);
 
-  // AI Context: Derived State. Currently mocks '1' as the active user ID.
-  const activeUserId = '1';
-  
-  /** Filtered cart showing only the items added by the current session user. */
-  const myCart = state.cart.filter(item => item.userId === activeUserId);
-  /** Monetary total of the items from the current session user. */
-  const myTotal = myCart.reduce((acc, item) => acc + (item.menuItem.price * item.quantity), 0);
-  /** Monetary total of all items in the global table cart. */
-  const tableTotal = state.cart.reduce((acc, item) => acc + (item.menuItem.price * item.quantity), 0);
-  /** Total count of item units globally (not just distinct items). */
-  const globalCartCount = state.cart.reduce((acc, item) => acc + item.quantity, 0);
+  /** Confirm all pending orders (send to kitchen). */
+  const confirmAllOrders = useCallback(async (): Promise<OrderConfirmResponse> => {
+    if (!slug || !sessionToken) throw new Error('No hay sesión activa');
+    return confirmOrders(slug, sessionToken);
+  }, [slug, sessionToken, confirmOrders]);
+
+  /** Active user ID from session. */
+  const activeUserId = currentUser?.id || null;
+
+  /** Derived: only the current user's orders. */
+  const myOrders = useMemo(
+    () => state.orders.filter(o => o.session_user_id === activeUserId),
+    [state.orders, activeUserId]
+  );
+
+  /** Derived: monetary total of the current user's items. */
+  const myTotal = useMemo(
+    () => myOrders.reduce((acc, o) => acc + o.unit_price * o.quantity, 0),
+    [myOrders]
+  );
+
+  /** Derived: monetary total of all items in the table. */
+  const tableTotal = useMemo(
+    () => state.orders.reduce((acc, o) => acc + o.unit_price * o.quantity, 0),
+    [state.orders]
+  );
+
+  /** Derived: total count of item units globally. */
+  const globalCartCount = useMemo(
+    () => state.orders.reduce((acc, o) => acc + o.quantity, 0),
+    [state.orders]
+  );
+
+  /** Derived: only pending items (not yet sent to kitchen). */
+  const pendingOrders = useMemo(
+    () => state.orders.filter(o => o.status === 'pending'),
+    [state.orders]
+  );
 
   return {
-    cart: state.cart,
-    myCart,
+    orders: state.orders,
+    myOrders,
+    pendingOrders,
     myTotal,
     tableTotal,
     globalCartCount,
-    addItem,
-    removeItem,
-    updateQuantity,
-    clearCart
+    loading: state.loading,
+    error: state.error,
+    activeUserId,
+    loadOrders,
+    addOrderItem,
+    removeOrderItem,
+    confirmAllOrders,
   };
 }

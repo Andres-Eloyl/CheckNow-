@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MOCK_USERS } from '@/lib/mocks/data';
 import { useOrder } from '@/hooks/useOrder';
+import { useSession } from '@/context/SessionContext';
 import { Avatar } from '@/components/ui/Avatar';
+import type { OrderItemResponse } from '@/types/api.types';
 
 export type SplitMethod = 'mine' | 'split' | 'gift' | null;
 
@@ -17,7 +18,11 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
   const [selectedSplitFriends, setSelectedSplitFriends] = useState<string[]>([]);
   const [selectedGiftFriends, setSelectedGiftFriends] = useState<string[]>([]);
 
-  const { myTotal, tableTotal, cart } = useOrder();
+  const { myTotal, tableTotal, orders } = useOrder();
+  const { session, currentUser } = useSession();
+
+  // Other users in the session (exclude current user)
+  const otherUsers = (session?.users || []).filter(u => u.id !== currentUser?.id);
 
   const toggleSplitFriend = (id: string) => {
     setSelectedSplitFriends(prev => prev.includes(id) ? prev.filter(f => f !== id) : [...prev, id]);
@@ -32,32 +37,33 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
     if (selectedMethod === 'mine') finalToPay = myTotal;
     if (selectedMethod === 'split') {
       const sharedTotal = tableTotal - myTotal;
-      const splitCount = selectedSplitFriends.length + 1; // Me + friends
+      const splitCount = selectedSplitFriends.length + 1;
       finalToPay = myTotal + (selectedSplitFriends.length > 0 ? (sharedTotal / splitCount) : 0);
     }
     if (selectedMethod === 'gift') {
       let friendsTotal = 0;
-      selectedGiftFriends.forEach(fId => {
-        const ft = cart.filter(i => i.userId === fId).reduce((acc, i) => acc + i.menuItem.price * i.quantity, 0);
+      selectedGiftFriends.forEach((fId: string) => {
+        const ft = orders
+          .filter((i: OrderItemResponse) => i.session_user_id === fId)
+          .reduce((acc: number, i: OrderItemResponse) => acc + i.unit_price * i.quantity, 0);
         friendsTotal += ft;
       });
       finalToPay = myTotal + friendsTotal;
     }
     
-    // Only pass back selected method to show confirm button, but we also pass total.
     onMethodChange(selectedMethod, finalToPay);
-  }, [selectedMethod, selectedSplitFriends, selectedGiftFriends, myTotal, tableTotal, cart, onMethodChange]);
+  }, [selectedMethod, selectedSplitFriends, selectedGiftFriends, myTotal, tableTotal, orders, onMethodChange]);
 
-  // Derived variable for easier UI binding
-  const currentFinalPayMock = () => {
+  const currentFinalPay = (): number => {
      if (selectedMethod === 'mine') return myTotal;
      if (selectedMethod === 'split') return myTotal + ((tableTotal - myTotal) / (selectedSplitFriends.length + 1));
      if (selectedMethod === 'gift') {
-       return myTotal + selectedGiftFriends.reduce((acc, fId) => acc + cart.filter(i => i.userId === fId).reduce((a, i) => a + i.menuItem.price * i.quantity, 0), 0);
+       return myTotal + selectedGiftFriends.reduce((acc: number, fId: string) => 
+         acc + orders.filter((i: OrderItemResponse) => i.session_user_id === fId).reduce((a: number, i: OrderItemResponse) => a + i.unit_price * i.quantity, 0), 0);
      }
      return tableTotal;
   };
-  const finalToPay = currentFinalPayMock();
+  const finalToPay = currentFinalPay();
 
   return (
     <div className="flex flex-col gap-4">
@@ -85,7 +91,6 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
           </div>
         </div>
         
-        {/* Mine Details Expansion */}
         <AnimatePresence>
           {selectedMethod === 'mine' && (
             <motion.div
@@ -126,7 +131,6 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
           </div>
         </div>
 
-        {/* Split Details Expansion */}
         <AnimatePresence>
           {selectedMethod === 'split' && (
             <motion.div
@@ -137,7 +141,7 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
             >
               <p className="font-medium mb-3 text-slate-800 dark:text-slate-200">¿Con quién divides el resto de la mesa?</p>
               <div className="flex gap-2 mb-4">
-                {MOCK_USERS.filter(u => u.id !== '1').map(user => (
+                {otherUsers.map(user => (
                   <div 
                     key={user.id} 
                     onClick={(e) => { e.stopPropagation(); toggleSplitFriend(user.id); }}
@@ -145,8 +149,8 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
                       selectedSplitFriends.includes(user.id) ? 'bg-primary/10 border-primary' : 'border-transparent bg-slate-200 dark:bg-slate-700'
                     }`}
                   >
-                    <Avatar alias={user.name} size="lg" />
-                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{user.name}</span>
+                    <Avatar alias={user.alias} size="lg" />
+                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{user.alias}</span>
                   </div>
                 ))}
               </div>
@@ -182,7 +186,6 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
           </div>
         </div>
 
-        {/* Gift Details Expansion */}
         <AnimatePresence>
           {selectedMethod === 'gift' && (
             <motion.div
@@ -193,8 +196,10 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
             >
               <p className="font-medium mb-3 text-slate-800 dark:text-slate-200">¿A quién invitas hoy?</p>
               <div className="flex flex-col gap-3 mb-4">
-                {MOCK_USERS.filter(u => u.id !== '1').map(user => {
-                  const fTotal = cart.filter(i => i.userId === user.id).reduce((acc, i) => acc + i.menuItem.price * i.quantity, 0);
+                {otherUsers.map(user => {
+                  const fTotal = orders
+                    .filter((i: OrderItemResponse) => i.session_user_id === user.id)
+                    .reduce((acc: number, i: OrderItemResponse) => acc + i.unit_price * i.quantity, 0);
                   const isInvited = selectedGiftFriends.includes(user.id);
                   return (
                     <div 
@@ -204,9 +209,9 @@ export function DivisionMethods({ onMethodChange }: DivisionMethodsProps) {
                         isInvited ? 'bg-primary/10 border-primary dark:bg-slate-800' : 'border-slate-200 bg-white dark:bg-slate-700 dark:border-transparent'
                       }`}
                     >
-                      <Avatar alias={user.name} size="md" />
+                      <Avatar alias={user.alias} size="md" />
                       <div className="flex-1">
-                        <span className="text-sm font-bold block text-slate-800 dark:text-slate-200">{user.name}</span>
+                        <span className="text-sm font-bold block text-slate-800 dark:text-slate-200">{user.alias}</span>
                         <span className="text-xs text-slate-500 dark:text-slate-400">${fTotal.toFixed(2)}</span>
                       </div>
                       {isInvited && <span className="material-symbols-outlined text-primary pr-2">check_circle</span>}
