@@ -13,8 +13,12 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
+# Strip ?pgbouncer=true from DATABASE_URL — asyncpg doesn't recognize it.
+# PgBouncer compatibility is handled by prepared_statement_cache_size=0 below.
+_db_url = settings.DATABASE_URL.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    _db_url,
     pool_size=settings.DB_POOL_SIZE,
     max_overflow=settings.DB_MAX_OVERFLOW,
     echo=settings.DB_ECHO,
