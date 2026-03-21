@@ -23,9 +23,14 @@ class SessionUserResponse(BaseModel):
     alias: str
     color: str
     emoji: Optional[str] = None
+    is_loyalty_linked: bool = False
     joined_at: datetime
 
     model_config = {"from_attributes": True}
+
+class SessionUserLinkLoyalty(BaseModel):
+    """Request schema for linking phone to session user."""
+    phone_number: str = Field(..., description="Número celular del comensal")
 
 
 class SessionResponse(BaseModel):

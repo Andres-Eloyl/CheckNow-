@@ -21,6 +21,8 @@ from app.models.table import Table
 from app.models.order import OrderItem, OrderStatus
 from app.models.split import SplitAssignment
 from app.models.payment import Payment, PaymentStatus, PaymentCurrency, PaymentMethod
+from app.models.loyalty import LoyaltyAccount
+from app.models.restaurant import RestaurantConfig
 
 from app.schemas.payment import (
     PaymentCreate,
@@ -253,6 +255,29 @@ async def verify_payment(
     # (amount_usd does NOT include tip, tip is separate field)
     db_session.tax_collected += 0 # In a real implementation, extract tax portion
     db_session.tip_collected += payment.tip_amount
+    
+    # ─── ADD LOYALTY POINTS ───
+    if user.loyalty_account_id:
+        # Get restaurant config for reward rate
+        config_res = await db.execute(
+            select(RestaurantConfig).where(RestaurantConfig.restaurant_id == restaurant_id)
+        )
+        config = config_res.scalars().first()
+        if config and config.loyalty_enabled:
+            acc_res = await db.execute(
+                select(LoyaltyAccount).where(LoyaltyAccount.id == user.loyalty_account_id)
+            )
+            account = acc_res.scalars().first()
+            if account:
+                # Calculate points based on amount_usd and config rate
+                points_earned = int(float(payment.amount_usd) * config.points_reward_rate)
+                if points_earned > 0:
+                    account.points_balance += points_earned
+                    account.total_spent_usd += payment.amount_usd
+                    account.visit_count += 1
+                    account.last_active = datetime.now(timezone.utc)
+                    db.add(account)
+    # ──────────────────────────
     
     await db.commit()
     await db.refresh(payment)

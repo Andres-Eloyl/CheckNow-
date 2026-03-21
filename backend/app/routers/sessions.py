@@ -19,7 +19,10 @@ from app.schemas.session import (
     SessionJoin,
     SessionResponse,
     SessionUserResponse,
+    SessionUserLinkLoyalty,
 )
+from app.routers.loyalty import _hash_phone
+from app.models.loyalty import LoyaltyAccount
 
 router = APIRouter(prefix="/api/{slug}/sessions", tags=["sessions"])
 
@@ -178,7 +181,9 @@ async def join_session(
     await db.commit()
     await db.refresh(new_user)
 
-    return new_user
+    response_data = new_user.__dict__.copy()
+    response_data["is_loyalty_linked"] = new_user.loyalty_account_id is not None
+    return response_data
 
 
 @router.post("/{token}/close", response_model=SessionResponse)
@@ -261,4 +266,72 @@ async def get_session_users(
     users_result = await db.execute(
         select(SessionUser).where(SessionUser.session_id == session_id)
     )
-    return users_result.scalars().all()
+    users = users_result.scalars().all()
+    
+    responses = []
+    for u in users:
+        u_dict = u.__dict__.copy()
+        u_dict["is_loyalty_linked"] = u.loyalty_account_id is not None
+        responses.append(u_dict)
+        
+    return responses
+
+
+@router.post("/{token}/users/{user_id}/loyalty", response_model=SessionUserResponse)
+async def link_loyalty(
+    slug: str,
+    token: str,
+    user_id: str,
+    link_in: SessionUserLinkLoyalty,
+    restaurant_id: str = Depends(get_restaurant_id),
+    db: AsyncSession = Depends(get_db),
+):
+    """Link a phone number to a session user for loyalty points."""
+    # Verify session and user
+    result = await db.execute(
+        select(TableSession, SessionUser)
+        .join(SessionUser, TableSession.id == SessionUser.session_id)
+        .join(Table, TableSession.table_id == Table.id)
+        .where(
+            TableSession.token == token,
+            SessionUser.id == user_id,
+            Table.restaurant_id == restaurant_id
+        )
+    )
+    row = result.first()
+    if not row:
+        raise HTTPException(status_code=404, detail="Session or user not found")
+        
+    db_session, user = row
+    
+    phone_hash = _hash_phone(link_in.phone_number)
+    
+    # Verify or create loyalty account
+    acc_result = await db.execute(
+        select(LoyaltyAccount).where(
+            LoyaltyAccount.restaurant_id == restaurant_id,
+            LoyaltyAccount.phone_hash == phone_hash
+        )
+    )
+    account = acc_result.scalars().first()
+    
+    if not account:
+        account = LoyaltyAccount(
+            restaurant_id=restaurant_id,
+            phone_hash=phone_hash,
+            points_balance=0,
+            total_spent_usd=0.0,
+            visit_count=0
+        )
+        db.add(account)
+        await db.flush() # assign ID quickly without committing full transaction yet
+        
+    user.phone_hash = phone_hash
+    user.loyalty_account_id = account.id
+    
+    await db.commit()
+    await db.refresh(user)
+    
+    response_data = user.__dict__.copy()
+    response_data["is_loyalty_linked"] = True
+    return response_data
