@@ -5,7 +5,7 @@ Handles checkout summaries, BCV exchange rate retrieval, and payment processing.
 
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, func
+from sqlalchemy import select, and_, func, or_
 import uuid
 from typing import List
 from datetime import datetime, timezone
@@ -39,7 +39,7 @@ async def get_valid_context(token: str, ref_user_id: str, db: AsyncSession) -> t
     result = await db.execute(
         select(TableSession)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
     )

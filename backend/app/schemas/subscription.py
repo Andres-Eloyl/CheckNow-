@@ -5,6 +5,7 @@ Schemas for restaurant owners to view their plan status.
 
 from pydantic import BaseModel
 from typing import Optional, List
+from uuid import UUID
 
 
 class SubscriptionStatusResponse(BaseModel):
@@ -25,7 +26,7 @@ class SubscriptionStatusResponse(BaseModel):
 
 class PlanPublicResponse(BaseModel):
     """Public view of an available subscription plan."""
-    id: str
+    id: UUID
     name: str
     price_monthly: Optional[float] = None
     price_yearly: Optional[float] = None

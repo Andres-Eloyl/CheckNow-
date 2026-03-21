@@ -64,11 +64,15 @@ async def open_session(
     # Expiration is handled by the JWT, but we also store it in DB
     expires_at = datetime.now(timezone.utc) + timedelta(hours=8)
 
+    # Only set opened_by if the token is from a staff user
+    # Owner "access" tokens have sub=restaurant_id which is not a valid staff_users FK
+    staff_id = current_user["sub"] if current_user.get("type") == "staff" else None
+
     db_session = TableSession(
         id=session_uuid,
         table_id=table.id,
         token=token,
-        opened_by=current_user["sub"],
+        opened_by=staff_id,
         expires_at=expires_at,
         status=SessionStatus.OPEN,
     )
@@ -81,11 +85,9 @@ async def open_session(
     await db.commit()
     await db.refresh(db_session)
 
-    # Prepare response (Pydantic schema expects table_number)
-    response_data = db_session.__dict__.copy()
-    response_data["table_number"] = table.number
-    
-    return response_data
+    # Prepare response — use Pydantic model_validate for proper nested serialization
+    db_session.table_number = table.number  # type: ignore[attr-defined]
+    return SessionResponse.model_validate(db_session, from_attributes=True).model_dump()
 
 
 @router.get("/{token}", response_model=SessionResponse)
@@ -118,10 +120,8 @@ async def get_session(
 
     db_session, table = row
     
-    response_data = db_session.__dict__.copy()
-    response_data["table_number"] = table.number
-    
-    return response_data
+    db_session.table_number = table.number  # type: ignore[attr-defined]
+    return SessionResponse.model_validate(db_session, from_attributes=True).model_dump()
 
 
 @router.post("/{token}/join", response_model=SessionUserResponse, status_code=status.HTTP_201_CREATED)
@@ -226,10 +226,8 @@ async def close_session(
     await db.commit()
     await db.refresh(db_session)
 
-    response_data = db_session.__dict__.copy()
-    response_data["table_number"] = table.number
-    
-    return response_data
+    db_session.table_number = table.number  # type: ignore[attr-defined]
+    return SessionResponse.model_validate(db_session, from_attributes=True).model_dump()
 
 
 @router.get("/{token}/users", response_model=list[SessionUserResponse])

@@ -2,13 +2,17 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { SOCIAL_PROOF_MESSAGES } from '@/lib/mocks/data';
 import { APP_CONSTANTS } from '@/lib/constants';
 import { Avatar } from '@/components/ui/Avatar';
+import { useSessionStore } from '@/stores/session.store';
 
 export function MenuHeader() {
   const [greeting, setGreeting] = useState('Hola');
   const [socialMessage, setSocialMessage] = useState<string | null>(null);
+  
+  const { session, alias, tableNumber } = useSessionStore();
+  const userAlias = alias || 'Tú';
+  const tableAlias = tableNumber ? `Mesa ${tableNumber}` : 'Mesa';
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -17,10 +21,12 @@ export function MenuHeader() {
     else setGreeting('Buenas noches');
     
     const interval = setInterval(() => {
-      const msg = SOCIAL_PROOF_MESSAGES[Math.floor(Math.random() * SOCIAL_PROOF_MESSAGES.length)];
-      setSocialMessage(msg);
-      setTimeout(() => setSocialMessage(null), APP_CONSTANTS.SOCIAL_PROOF_DURATION_MS);
-    }, APP_CONSTANTS.SOCIAL_PROOF_INTERVAL_MS);
+      // Social proof temporarily disabled as it relies on mocks that may not exist.
+      // Uncomment and use real real-time data or proper mocks when available.
+      // const msg = SOCIAL_PROOF_MESSAGES[Math.floor(Math.random() * SOCIAL_PROOF_MESSAGES.length)];
+      // setSocialMessage(msg);
+      // setTimeout(() => setSocialMessage(null), APP_CONSTANTS.SOCIAL_PROOF_DURATION_MS);
+    }, APP_CONSTANTS.SOCIAL_PROOF_INTERVAL_MS * 2);
     return () => clearInterval(interval);
   }, []);
 
@@ -34,13 +40,13 @@ export function MenuHeader() {
       >
         <div className="flex items-center gap-3.5">
           <div className="relative shrink-0">
-            <Avatar alias="Tú" size="md" className="border-2 border-primary shadow-sm" />
+            <Avatar alias={userAlias} size="md" className="border-2 border-primary shadow-sm" />
             {/* Online indicator dot inside avatar */}
             <div className="absolute bottom-0 right-0 size-3 rounded-full bg-green-500 border-2 border-white dark:border-[#0A0A0B]"></div>
           </div>
           <div className="flex flex-col">
             <h2 className="text-[13px] font-semibold text-slate-500 dark:text-slate-400 leading-tight">
-              {greeting}, <span className="font-bold text-slate-900 dark:text-slate-100 italic">Mesa 4</span>
+              {greeting}, <span className="font-bold text-slate-900 dark:text-slate-100 italic">{tableAlias}</span>
             </h2>
             <h1 className="text-xl font-black tracking-tight text-slate-900 dark:text-white leading-tight">
               ¿Qué se te antoja? 😋

@@ -49,11 +49,12 @@ export default function QRLandingPage() {
         if (session.status === 'closed') {
           setSessionNotOpen(true);
         }
-      } catch (err) {
-        if (err instanceof ApiError && err.status === 404) {
+      } catch (err: any) {
+        console.error("Session validation error:", err);
+        if (err?.status === 404) {
           setSessionNotOpen(true);
         } else {
-          setError('Error al validar la mesa. Intenta de nuevo.');
+          setError(`Error al validar la mesa. ${err?.detail || err?.message || 'Intenta de nuevo.'}`);
         }
       } finally {
         setValidating(false);
@@ -79,9 +80,10 @@ export default function QRLandingPage() {
       setSessionAuth({ session_user_id: user.id, session_token: tableId, slug });
 
       router.push(`/r/${slug}/t/${tableId}/menu`);
-    } catch (err) {
-      if (err instanceof ApiError) {
-        setError(err.detail);
+    } catch (err: any) {
+      console.error("Session join error:", err);
+      if (err?.status || err?.detail) {
+        setError(err.detail || 'Error al procesar.');
       } else {
         setError('Error al unirse a la mesa. Intenta de nuevo.');
       }
@@ -198,7 +200,7 @@ export default function QRLandingPage() {
             </div>
           </motion.div>
 
-          <motion.form variants={itemVariants} onSubmit={handleJoin} className="w-full space-y-5 max-w-sm">
+          <motion.form id="joinForm" variants={itemVariants} onSubmit={handleJoin} className="w-full space-y-5 max-w-sm">
             <div className="flex flex-col gap-2">
               <label htmlFor="nameInput" className="text-sm font-semibold text-text-muted ml-1">
                 ¿Cómo te llamas?
@@ -253,7 +255,7 @@ export default function QRLandingPage() {
         >
           <motion.button
             type="submit"
-            onClick={handleJoin}
+            form="joinForm"
             disabled={!name.trim() || loading}
             whileHover={name.trim() && !loading ? { scale: 1.02 } : {}}
             whileTap={name.trim() && !loading ? { scale: 0.98 } : {}}

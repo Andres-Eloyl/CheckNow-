@@ -4,6 +4,7 @@ CheckNow! — Table Schemas
 
 from pydantic import BaseModel, Field
 from typing import Optional
+from uuid import UUID
 
 
 class TableCreate(BaseModel):
@@ -21,7 +22,7 @@ class TableUpdate(BaseModel):
 
 class TableResponse(BaseModel):
     """Response schema for table info."""
-    id: str
+    id: UUID
     number: int
     label: Optional[str] = None
     capacity: int

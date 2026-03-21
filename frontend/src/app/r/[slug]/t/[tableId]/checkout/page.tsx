@@ -49,6 +49,7 @@ export default function GuestCheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'verified' | 'rejected'>('idle');
   const [rejectionReason, setRejectionReason] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // Payment form fields
   const [pagoMovilData, setPagoMovilData] = useState({ banco: '', telefono: '', cedula: '', referencia: '' });
@@ -66,7 +67,10 @@ export default function GuestCheckoutPage() {
     ]).then(([sum, rate]) => {
       setSummary(sum);
       setExchangeRate(rate);
-    }).catch(() => {}).finally(() => setLoading(false));
+      setError(null);
+    }).catch((e: any) => {
+      setError(e.message || 'Error al cargar los datos de pago.');
+    }).finally(() => setLoading(false));
   }, [slug, tableId]);
 
   // WebSocket for payment status
@@ -130,7 +134,10 @@ export default function GuestCheckoutPage() {
     try {
       await checkoutService.submitPayment(slug, tableId, paymentData);
       setPaymentStatus('pending');
-    } catch {} finally {
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || 'Error al procesar el pago.');
+    } finally {
       setSubmitting(false);
     }
   };
@@ -201,6 +208,23 @@ export default function GuestCheckoutPage() {
           </div>
         </div>
       </header>
+
+      {/* Error Message */}
+      <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mx-5 mt-4 p-4 rounded-2xl bg-danger/20 border border-danger/30 flex items-center justify-between"
+          >
+            <p className="text-danger font-bold text-sm text-left flex-1">{error}</p>
+            <button onClick={() => setError(null)} className="text-danger opacity-70 hover:opacity-100 shrink-0">
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="flex-1 px-5 py-4 max-w-2xl mx-auto w-full space-y-6">
         {/* Summary card */}

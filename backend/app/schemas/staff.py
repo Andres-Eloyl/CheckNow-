@@ -4,6 +4,7 @@ CheckNow! — Staff Schemas
 
 from pydantic import BaseModel, Field
 from typing import Optional
+from uuid import UUID
 
 
 class StaffCreate(BaseModel):
@@ -23,7 +24,7 @@ class StaffUpdate(BaseModel):
 
 class StaffResponse(BaseModel):
     """Response schema for staff info."""
-    id: str
+    id: UUID
     name: str
     role: str
     is_active: bool

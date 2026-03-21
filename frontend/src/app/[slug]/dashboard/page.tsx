@@ -80,7 +80,10 @@ export default function DashboardHomePage() {
     try {
       await sessionService.openSession(slug, { table_id: tableId });
       updateTableStatus(tableId, 'active');
-    } catch {} finally {
+    } catch (err: any) {
+      console.error('Error opening session:', err?.detail || err?.message || err);
+      alert(err?.detail || 'Error al abrir la mesa. Intenta de nuevo.');
+    } finally {
       setOpeningTable(null);
     }
   };

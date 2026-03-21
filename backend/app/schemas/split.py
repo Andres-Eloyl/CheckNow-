@@ -4,12 +4,13 @@ CheckNow! — Split Schemas
 
 from pydantic import BaseModel, Field
 from typing import List, Optional
+from uuid import UUID
 
 
 class SplitCreate(BaseModel):
     """Request schema for initiating a split on an order item."""
-    order_item_id: str
-    participants: List[str] = Field(
+    order_item_id: UUID
+    participants: List[UUID] = Field(
         ..., min_length=1,
         description="List of session_user_ids to split with"
     )
@@ -21,11 +22,11 @@ class SplitCreate(BaseModel):
 
 class SplitResponse(BaseModel):
     """Response for a split assignment."""
-    id: str
-    order_item_id: str
+    id: UUID
+    order_item_id: UUID
     order_item_name: Optional[str] = None
-    requested_by: str
-    session_user_id: str
+    requested_by: UUID
+    session_user_id: UUID
     fraction: float
     amount_owed: float
     accepted: bool
@@ -36,5 +37,5 @@ class SplitResponse(BaseModel):
 
 class PayForRequest(BaseModel):
     """Request schema for 'Yo invito' — paying for someone else's item."""
-    order_item_id: str
-    beneficiary_user_id: str
+    order_item_id: UUID
+    beneficiary_user_id: UUID

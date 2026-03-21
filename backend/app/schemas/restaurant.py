@@ -5,11 +5,12 @@ CheckNow! — Restaurant Schemas
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
 
 
 class RestaurantPublic(BaseModel):
     """Public restaurant info (no sensitive data)."""
-    id: str
+    id: UUID
     slug: str
     name: str
     country: str
@@ -37,7 +38,7 @@ class RestaurantConfigUpdate(BaseModel):
 
 class RestaurantConfigResponse(BaseModel):
     """Full restaurant configuration response."""
-    restaurant_id: str
+    restaurant_id: UUID
     tax_rate: float
     service_charge: float
     currency_primary: str

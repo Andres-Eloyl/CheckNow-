@@ -33,6 +33,7 @@ export default function GuestCartPage() {
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [confirmSuccess, setConfirmSuccess] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Redirect if no session
   useEffect(() => {
@@ -49,8 +50,9 @@ export default function GuestCartPage() {
       ]);
       setOrders(ordersData);
       setUsers(sessionData.users);
-    } catch {
-      // Handle error silently
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || 'Error al cargar la orden.');
     } finally {
       setLoading(false);
     }
@@ -76,7 +78,10 @@ export default function GuestCartPage() {
     try {
       await orderService.removeItem(slug, tableId, orderId);
       setOrders(prev => prev.filter(o => o.id !== orderId));
-    } catch {}
+      setError(null);
+    } catch (e: any) {
+      setError(e.message || 'No se pudo eliminar el item.');
+    }
   };
 
   const handleConfirmOrders = async () => {
@@ -84,9 +89,12 @@ export default function GuestCartPage() {
     try {
       await orderService.confirmOrders(slug, tableId);
       setConfirmSuccess(true);
+      setError(null);
       setTimeout(() => setConfirmSuccess(false), 3000);
       fetchData();
-    } catch {} finally {
+    } catch (e: any) {
+      setError(e.message || 'No se pudo enviar la orden a cocina.');
+    } finally {
       setConfirming(false);
     }
   };
@@ -139,6 +147,20 @@ export default function GuestCartPage() {
 
       {/* Success animation */}
       <AnimatePresence>
+        {error && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="mx-5 mt-3 p-4 rounded-2xl bg-danger/20 border border-danger/30 text-center flex items-center justify-between"
+          >
+            <p className="text-danger font-bold text-sm text-left flex-1">{error}</p>
+            <button onClick={() => setError(null)} className="text-danger opacity-70 hover:opacity-100">
+              <span className="material-symbols-outlined text-lg">close</span>
+            </button>
+          </motion.div>
+        )}
+        
         {confirmSuccess && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}
