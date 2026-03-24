@@ -24,6 +24,7 @@ class OrderItemResponse(BaseModel):
     session_user_alias: Optional[str] = None
     menu_item_id: UUID
     menu_item_name: Optional[str] = None
+    table_number: Optional[str] = None
     quantity: int
     unit_price: float
     modifiers: list = []

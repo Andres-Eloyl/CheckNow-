@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { restaurantService } from '@/lib/api/restaurant.service';
 import { useSessionStore } from '@/stores/session.store';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import type { RestaurantPublic } from '@/types/api.types';
 
 /**
@@ -61,13 +62,12 @@ export default function GuestLayout({ children }: { children: React.ReactNode })
 
   return (
     <>
-      {/* Dynamic CSS variables from restaurant branding */}
-      <style>{`
-        :root {
-          --color-primary: ${restaurant.primary_color || '#6C63FF'};
-          --color-secondary: ${restaurant.secondary_color || '#FF6B35'};
-        }
-      `}</style>
+      {/* Dynamic CSS variables from restaurant branding managed by ThemeProvider */}
+      <ThemeProvider 
+        slug={slug as string} 
+        defaultPrimary={restaurant.primary_color} 
+        defaultSecondary={restaurant.secondary_color} 
+      />
       {children}
     </>
   );

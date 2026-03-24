@@ -17,6 +17,7 @@ class RestaurantPublic(BaseModel):
     primary_color: Optional[str] = "#6C63FF"
     secondary_color: Optional[str] = "#FF6B35"
     logo_url: Optional[str] = None
+    accepted_methods: Optional[list] = None
 
     model_config = {"from_attributes": True}
 

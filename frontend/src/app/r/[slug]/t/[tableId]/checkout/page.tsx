@@ -6,10 +6,11 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSessionStore } from '@/stores/session.store';
 import { checkoutService } from '@/lib/api/checkout.service';
+import { restaurantService } from '@/lib/api/restaurant.service';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { getComensalWebSocketUrl } from '@/lib/api/client';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { CheckoutSummary, ExchangeRateResponse, PaymentCreate } from '@/types/api.types';
+import type { CheckoutSummary, ExchangeRateResponse, PaymentCreate, RestaurantPublic } from '@/types/api.types';
 
 const VENEZUELAN_BANKS = [
   'Banesco', 'Mercantil', 'BBVA Provincial', 'BNC', 'Banco de Venezuela',
@@ -42,6 +43,7 @@ export default function GuestCheckoutPage() {
 
   const [summary, setSummary] = useState<CheckoutSummary | null>(null);
   const [exchangeRate, setExchangeRate] = useState<ExchangeRateResponse | null>(null);
+  const [restaurant, setRestaurant] = useState<RestaurantPublic | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedTip, setSelectedTip] = useState(0.10);
   const [customTip, setCustomTip] = useState('');
@@ -64,9 +66,11 @@ export default function GuestCheckoutPage() {
     Promise.all([
       checkoutService.getCheckoutSummary(slug, tableId),
       checkoutService.getExchangeRate(slug),
-    ]).then(([sum, rate]) => {
+      restaurantService.getPublicInfo(slug),
+    ]).then(([sum, rate, rest]) => {
       setSummary(sum);
       setExchangeRate(rate);
+      setRestaurant(rest);
       setError(null);
     }).catch((e: any) => {
       setError(e.message || 'Error al cargar los datos de pago.');
@@ -141,6 +145,10 @@ export default function GuestCheckoutPage() {
       setSubmitting(false);
     }
   };
+
+  const availableMethods = restaurant?.accepted_methods 
+    ? PAYMENT_METHODS.filter(m => restaurant.accepted_methods?.includes(m.id))
+    : PAYMENT_METHODS;
 
   if (loading) {
     return <div className="min-h-[100dvh] flex items-center justify-center bg-background-dark"><LoadingSpinner /></div>;
@@ -290,7 +298,7 @@ export default function GuestCheckoutPage() {
         <div className="space-y-3">
           <h2 className="font-bold text-sm text-text-muted uppercase tracking-wider">Método de Pago</h2>
           <div className="grid grid-cols-1 gap-2">
-            {PAYMENT_METHODS.map(m => (
+            {availableMethods.map(m => (
               <button key={m.id} onClick={() => setSelectedMethod(m.id)}
                 className={`flex items-center gap-3 p-4 rounded-2xl transition-all ${
                   selectedMethod === m.id ? 'bg-primary/20 border border-primary/30' : 'bg-surface hover:bg-surface-2'

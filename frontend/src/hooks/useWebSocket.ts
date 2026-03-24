@@ -28,9 +28,20 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect }: WebSoc
   const reconnectTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const onMessageRef = useRef(onMessage);
+  const onConnectRef = useRef(onConnect);
+  const onDisconnectRef = useRef(onDisconnect);
+
   useEffect(() => {
     onMessageRef.current = onMessage;
   }, [onMessage]);
+
+  useEffect(() => {
+    onConnectRef.current = onConnect;
+  }, [onConnect]);
+
+  useEffect(() => {
+    onDisconnectRef.current = onDisconnect;
+  }, [onDisconnect]);
 
   /** AI Context: Connect logic wrapped in useCallback to avoid constant recreations. Includes auto-reconnect on close/error. */
   const connect = useCallback(() => {
@@ -42,7 +53,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect }: WebSoc
 
       ws.current.onopen = () => {
         setIsConnected(true);
-        onConnect?.();
+        onConnectRef.current?.();
         if (reconnectTimeout.current) {
           clearTimeout(reconnectTimeout.current);
           reconnectTimeout.current = null;
@@ -51,7 +62,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect }: WebSoc
 
       ws.current.onclose = () => {
         setIsConnected(false);
-        onDisconnect?.();
+        onDisconnectRef.current?.();
         // Automatically try to reconnect after 3 seconds
         reconnectTimeout.current = setTimeout(() => {
           connect();
@@ -59,7 +70,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect }: WebSoc
       };
 
       ws.current.onerror = (error) => {
-        console.error('WebSocket Exception:', error);
+        console.warn('WebSocket Exception:', error);
         ws.current?.close();
       };
 
@@ -73,7 +84,7 @@ export function useWebSocket({ url, onMessage, onConnect, onDisconnect }: WebSoc
         connect();
       }, 3000);
     }
-  }, [url, onConnect, onDisconnect]);
+  }, [url]);
 
   // Establish connection on mount and clean up on unmount.
   useEffect(() => {

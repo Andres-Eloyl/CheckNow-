@@ -350,3 +350,34 @@ async def update_order_status(
     response_data["session_user_alias"] = session_user.alias
     response_data["menu_item_name"] = menu_item.name
     return response_data
+
+@router.get("/api/{slug}/orders/active", response_model=List[OrderItemResponse])
+async def get_active_orders(
+    slug: str,
+    restaurant_id: str = Depends(get_restaurant_id),
+    current_user: dict = Depends(get_current_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """Get all active orders for staff KDS view."""
+    result = await db.execute(
+        select(OrderItem, SessionUser.alias, MenuItem.name, Table.number)
+        .join(SessionUser, OrderItem.session_user_id == SessionUser.id)
+        .join(MenuItem, OrderItem.menu_item_id == MenuItem.id)
+        .join(TableSession, OrderItem.session_id == TableSession.id)
+        .join(Table, TableSession.table_id == Table.id)
+        .where(
+            Table.restaurant_id == restaurant_id,
+            OrderItem.status.in_([OrderStatus.SENT, OrderStatus.PREPARING, OrderStatus.READY])
+        )
+        .order_by(OrderItem.sent_at.asc())
+    )
+    
+    orders = []
+    for order, alias, item_name, table_number in result.all():
+        data = {c.name: getattr(order, c.name) for c in order.__table__.columns}
+        data["session_user_alias"] = alias
+        data["menu_item_name"] = item_name
+        data["table_number"] = table_number
+        orders.append(data)
+        
+    return orders

@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-primary: #6C63FF;
-  --color-secondary: #FF6B35;
+  --color-primary: var(--theme-primary, #6C63FF);
+  --color-secondary: var(--theme-secondary, #FF6B35);
   --color-success: #22C55E;
   --color-danger: #EF4444;
   --color-warning: #F59E0B;

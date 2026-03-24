@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useParams } from 'next/navigation';
 import { configService } from '@/lib/api/config.service';
+import { useThemeStore } from '@/stores/theme.store';
 import type { RestaurantConfigResponse, RestaurantConfigUpdate } from '@/types/api.types';
 
 export default function SettingsPage() {
@@ -29,6 +30,7 @@ export default function SettingsPage() {
     try {
       const updated = await configService.updateConfig(slug, form);
       setConfig(updated);
+      useThemeStore.getState().setTheme(updated.primary_color || null, updated.secondary_color || null);
       setSaved(true);
       setTimeout(() => setSaved(false), 3000);
     } catch {} finally { setSaving(false); }
@@ -110,7 +112,7 @@ export default function SettingsPage() {
                 <button key={method} onClick={() => {
                   const current = (form.accepted_methods as string[]) || [];
                   update('accepted_methods', isActive ? current.filter(m => m !== method) : [...current, method]);
-                }} className={`p-3 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-primary/20 border border-primary/30 text-primary' : 'bg-surface-2 text-text-muted'}`}>
+                }} className={`p-3 rounded-xl text-sm font-bold transition-all ${isActive ? 'bg-primary text-white shadow-lg shadow-primary/30' : 'bg-surface-2 text-text-muted'}`}>
                   {labels[method] || method}
                 </button>
               );

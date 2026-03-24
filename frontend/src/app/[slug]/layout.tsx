@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth.store';
 import { useDashboardStore } from '@/stores/dashboard.store';
 import { authService } from '@/lib/api/auth.service';
+import { ThemeProvider } from '@/components/ThemeProvider';
 
 const NAV_ITEMS = [
   { href: 'dashboard', icon: 'dashboard', label: 'Panel' },
@@ -54,6 +55,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-[100dvh] bg-background-dark font-[Inter] text-white flex">
+      <ThemeProvider slug={slug as string} />
       {/* Sidebar - desktop */}
       <aside className="hidden lg:flex flex-col w-64 bg-surface border-r border-neutral-border fixed inset-y-0 left-0 z-40">
         {/* Logo */}

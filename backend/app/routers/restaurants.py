@@ -39,6 +39,7 @@ async def get_restaurant_public(
         primary_color=config.primary_color if config else "#6C63FF",
         secondary_color=config.secondary_color if config else "#FF6B35",
         logo_url=config.logo_url if config else None,
+        accepted_methods=config.accepted_methods if config else ["pago_movil", "zelle", "efectivo_usd", "efectivo_ves", "tarjeta"],
     )
 
 

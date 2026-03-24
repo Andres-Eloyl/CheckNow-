@@ -61,6 +61,7 @@ export interface RestaurantPublic {
   primary_color?: string;
   secondary_color?: string;
   logo_url?: string;
+  accepted_methods?: string[];
 }
 
 export interface RestaurantMeResponse {
@@ -255,6 +256,7 @@ export interface OrderItemResponse {
   session_user_alias?: string;
   menu_item_id: string;
   menu_item_name?: string;
+  table_number?: string;
   quantity: number;
   unit_price: number;
   modifiers: string[];
