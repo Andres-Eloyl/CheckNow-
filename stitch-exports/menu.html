@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Menu Administrator | CheckNow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f47b25",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#221710",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: "Plus Jakarta Sans", sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(244, 123, 37, 0.2);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display">
+<div class="flex h-screen overflow-hidden">
+<!-- Sidebar Navigation -->
+<aside class="w-64 flex-shrink-0 flex flex-col border-r border-slate-200 dark:border-primary/20 bg-white dark:bg-background-dark">
+<div class="p-6 flex flex-col gap-1">
+<h1 class="text-xl font-bold text-primary tracking-tight">CheckNow</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400 font-medium uppercase tracking-wider">Admin Dashboard</p>
+</div>
+<nav class="flex-1 px-4 py-4 flex flex-col gap-2 overflow-y-auto custom-scrollbar">
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-sm font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 bg-primary/10 text-primary rounded-lg transition-colors border border-primary/20" href="#">
+<span class="material-symbols-outlined">restaurant_menu</span>
+<span class="text-sm font-medium">Menu Manager</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">receipt_long</span>
+<span class="text-sm font-medium">Orders</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="text-sm font-medium">Staff</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-lg transition-colors" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-sm font-medium">Settings</span>
+</a>
+</nav>
+<div class="p-4 border-t border-slate-200 dark:border-primary/20">
+<button class="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-bold py-2.5 rounded-lg transition-all shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-[20px]">add_circle</span>
+<span class="text-sm">Add Category</span>
+</button>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 flex flex-col overflow-hidden bg-slate-50 dark:bg-[#1a120d]">
+<!-- Header -->
+<header class="h-16 flex items-center justify-between px-8 bg-white dark:bg-background-dark border-b border-slate-200 dark:border-primary/20 shadow-sm z-10">
+<div class="flex items-center gap-6">
+<h2 class="text-lg font-bold">Menu Administrator</h2>
+<div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+<input class="w-full pl-10 pr-4 py-1.5 bg-slate-100 dark:bg-primary/5 border-none rounded-lg text-sm focus:ring-1 focus:ring-primary text-slate-900 dark:text-slate-100 placeholder:text-slate-400" placeholder="Search menu items..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="flex items-center gap-2 bg-primary/10 text-primary hover:bg-primary hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-all border border-primary/20">
+<span class="material-symbols-outlined text-[18px]">add</span>
+<span>Add Item</span>
+</button>
+<button class="p-2 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-primary/10 rounded-full transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-primary rounded-full ring-2 ring-white dark:ring-background-dark"></span>
+</button>
+<div class="h-8 w-8 rounded-full bg-primary/20 border border-primary/40 overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="User profile avatar of a male administrator" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCqi4RiOoC6dsNg9hHqmqyP13XiJC6hN1dfjtu5yDWTexaLi-2g-2xt3vJ3_hgnye137x96tumP-_ZCQoCHE5LY_J4ZnWEMFE99nRUk9Sz1HEiJqsVILyBvxy5IbNmHhZrlsIbm7FwxjNG53Ws1Xgd8_fFzcITR67cBiklAjJpNLdXKx8bFdoDKT9Oqorj5yJaWydo4dkAK_9mbC511orKpFEB67TPOduHkJyDSc_MO_DmngjX0zAKrudQ5Yx0x_BUaIOp-ypVqEg"/>
+</div>
+</div>
+</header>
+<!-- Content -->
+<div class="flex-1 overflow-y-auto p-8 custom-scrollbar">
+<div class="max-w-6xl mx-auto flex flex-col gap-6">
+<div class="flex items-end justify-between">
+<div>
+<h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-50">Menu Management</h1>
+<p class="text-slate-500 dark:text-slate-400 mt-1">Configure categories, items, and track live inventory levels.</p>
+</div>
+<button class="px-6 py-2.5 bg-slate-900 dark:bg-primary text-white font-bold rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">publish</span>
+                            Publish Changes
+                        </button>
+</div>
+<!-- Categories Hierarchical List -->
+<div class="flex flex-col gap-4 mt-4">
+<!-- Category: Burgers -->
+<div class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-primary/20 overflow-hidden shadow-sm">
+<div class="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-primary/5 border-b border-slate-200 dark:border-primary/10 group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors cursor-pointer">expand_more</span>
+<h3 class="text-lg font-bold flex items-center gap-2">Burgers <span class="text-xl">🍔</span></h3>
+<span class="px-2 py-0.5 bg-slate-200 dark:bg-primary/20 text-slate-600 dark:text-primary rounded text-[10px] font-bold uppercase">2 Items</span>
+</div>
+<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary rounded transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 rounded transition-colors"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</div>
+<div class="divide-y divide-slate-100 dark:divide-primary/10">
+<!-- Burger Item 1 -->
+<div class="p-6 grid grid-cols-12 gap-6 items-start hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
+<div class="col-span-4 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-bold text-slate-900 dark:text-slate-100">Classic Burger</span>
+<span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold">KITCHEN</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400">100% Wagyu beef patty with fresh lettuce, tomatoes, and our signature sauce on a brioche bun.</p>
+<div class="mt-2 flex flex-wrap gap-2">
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-slate-200 dark:border-primary/20 text-slate-500">Add Bacon (+$2.00)</span>
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-slate-200 dark:border-primary/20 text-slate-500">Extra Cheese (+$1.50)</span>
+</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Price</span>
+<span class="text-lg font-bold text-primary tracking-tight">$12.00</span>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Prep Time</span>
+<div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="font-medium text-sm">15 min</span>
+</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Stock Count</span>
+<div class="flex items-center gap-0 overflow-hidden rounded-lg border-2 border-primary shadow-sm shadow-primary/10">
+<input class="w-full text-center py-1.5 bg-white dark:bg-background-dark border-none focus:ring-0 font-bold text-primary" type="number" value="50"/>
+</div>
+</div>
+<div class="col-span-2 flex justify-end items-center gap-2 h-full pt-4">
+<button class="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all border border-transparent hover:border-primary/20">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+<!-- Burger Item 2 -->
+<div class="p-6 grid grid-cols-12 gap-6 items-start hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
+<div class="col-span-4 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-bold text-slate-900 dark:text-slate-100">Cheese Burger</span>
+<span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] font-bold">KITCHEN</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400">Classic cheese burger topped with melted cheddar, pickles, and crispy onions.</p>
+<div class="mt-2 flex flex-wrap gap-2">
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-slate-200 dark:border-primary/20 text-slate-500">Double Patty (+$4.00)</span>
+</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Price</span>
+<span class="text-lg font-bold text-primary tracking-tight">$14.00</span>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Prep Time</span>
+<div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="font-medium text-sm">15 min</span>
+</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Stock Count</span>
+<div class="flex items-center gap-0 overflow-hidden rounded-lg border-2 border-primary shadow-sm shadow-primary/10">
+<input class="w-full text-center py-1.5 bg-white dark:bg-background-dark border-none focus:ring-0 font-bold text-primary" type="number" value="35"/>
+</div>
+</div>
+<div class="col-span-2 flex justify-end items-center gap-2 h-full pt-4">
+<button class="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all border border-transparent hover:border-primary/20">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Category: Drinks -->
+<div class="bg-white dark:bg-background-dark rounded-xl border border-slate-200 dark:border-primary/20 overflow-hidden shadow-sm">
+<div class="flex items-center justify-between px-6 py-4 bg-slate-50 dark:bg-primary/5 border-b border-slate-200 dark:border-primary/10 group">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-slate-400 group-hover:text-primary transition-colors cursor-pointer">expand_more</span>
+<h3 class="text-lg font-bold flex items-center gap-2">Drinks <span class="text-xl">🥤</span></h3>
+<span class="px-2 py-0.5 bg-slate-200 dark:bg-primary/20 text-slate-600 dark:text-primary rounded text-[10px] font-bold uppercase">1 Item</span>
+</div>
+<div class="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-1.5 text-slate-400 hover:text-primary rounded transition-colors"><span class="material-symbols-outlined text-[18px]">edit</span></button>
+<button class="p-1.5 text-slate-400 hover:text-red-500 rounded transition-colors"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</div>
+</div>
+<div class="divide-y divide-slate-100 dark:divide-primary/10">
+<!-- Drink Item 1 -->
+<div class="p-6 grid grid-cols-12 gap-6 items-start hover:bg-slate-50/50 dark:hover:bg-primary/5 transition-colors">
+<div class="col-span-4 flex flex-col gap-1">
+<div class="flex items-center gap-2">
+<span class="font-bold text-slate-900 dark:text-slate-100">Margarita</span>
+<span class="px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-500 text-[10px] font-bold">BAR</span>
+</div>
+<p class="text-sm text-slate-500 dark:text-slate-400">Classic lime margarita with premium tequila, served over ice with a salted rim.</p>
+<div class="mt-2 flex flex-wrap gap-2">
+<span class="text-[11px] font-medium px-2 py-0.5 rounded-full border border-slate-200 dark:border-primary/20 text-slate-500">Premium Tequila (+$5.00)</span>
+</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Price</span>
+<span class="text-lg font-bold text-primary tracking-tight">$9.00</span>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Prep Time</span>
+<div class="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+<span class="font-medium text-sm">5 min</span>
+</div>
+</div>
+<div class="col-span-2 flex flex-col gap-1">
+<span class="text-xs text-slate-400 uppercase font-bold tracking-wider">Stock Count</span>
+<div class="flex items-center gap-0 overflow-hidden rounded-lg border-2 border-primary shadow-sm shadow-primary/10">
+<input class="w-full text-center py-1.5 bg-white dark:bg-background-dark border-none focus:ring-0 font-bold text-primary" type="number" value="120"/>
+</div>
+</div>
+<div class="col-span-2 flex justify-end items-center gap-2 h-full pt-4">
+<button class="p-2 text-slate-400 hover:text-primary hover:bg-primary/10 rounded-lg transition-all border border-transparent hover:border-primary/20">
+<span class="material-symbols-outlined">edit</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all border border-transparent hover:border-red-500/20">
+<span class="material-symbols-outlined">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+</body></html>

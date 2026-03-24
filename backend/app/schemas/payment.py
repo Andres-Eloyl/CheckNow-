@@ -5,6 +5,7 @@ CheckNow! — Payment Schemas
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class PaymentCreate(BaseModel):
@@ -20,8 +21,8 @@ class PaymentCreate(BaseModel):
 
 class PaymentResponse(BaseModel):
     """Response schema for a payment."""
-    id: str
-    session_user_id: str
+    id: UUID
+    session_user_id: UUID
     amount_usd: float
     amount_local: Optional[float] = None
     currency: str
@@ -45,7 +46,7 @@ class PaymentReject(BaseModel):
 
 class CheckoutSummary(BaseModel):
     """Individual checkout breakdown before paying."""
-    user_id: str
+    user_id: UUID
     alias: str
     subtotal: float
     tax: float

@@ -5,11 +5,12 @@ CheckNow! — Restaurant Schemas
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
 
 
 class RestaurantPublic(BaseModel):
     """Public restaurant info (no sensitive data)."""
-    id: str
+    id: UUID
     slug: str
     name: str
     country: str
@@ -33,13 +34,11 @@ class RestaurantConfigUpdate(BaseModel):
     wifi_ssid: Optional[str] = Field(None, max_length=100)
     cross_sell_enabled: Optional[bool] = None
     loyalty_enabled: Optional[bool] = None
-    points_reward_rate: Optional[int] = Field(None, ge=1, description="Puntos por 1 USD")
-    points_redemption_value: Optional[float] = Field(None, ge=0.0001, description="Valor de 1 punto en USD")
 
 
 class RestaurantConfigResponse(BaseModel):
     """Full restaurant configuration response."""
-    restaurant_id: str
+    restaurant_id: UUID
     tax_rate: float
     service_charge: float
     currency_primary: str
@@ -50,7 +49,5 @@ class RestaurantConfigResponse(BaseModel):
     wifi_ssid: Optional[str] = None
     cross_sell_enabled: bool
     loyalty_enabled: bool
-    points_reward_rate: int
-    points_redemption_value: float
 
     model_config = {"from_attributes": True}

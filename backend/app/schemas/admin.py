@@ -6,6 +6,7 @@ Schemas for the Super-Admin panel.
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, List
 from datetime import datetime, date
+from uuid import UUID
 
 
 # ──────────────────────────────────────────────
@@ -31,7 +32,7 @@ class AdminTokenResponse(BaseModel):
 
 class RestaurantAdminView(BaseModel):
     """Detailed restaurant view for the admin panel."""
-    id: str
+    id: UUID
     slug: str
     name: str
     email: str
@@ -84,7 +85,7 @@ class PlanUpdate(BaseModel):
 
 class PlanResponse(BaseModel):
     """Subscription plan response."""
-    id: str
+    id: UUID
     name: str
     price_monthly: Optional[float] = None
     price_yearly: Optional[float] = None
@@ -102,7 +103,7 @@ class PlanResponse(BaseModel):
 
 class AssignPlanRequest(BaseModel):
     """Assign a plan to a restaurant (manual payment confirmation)."""
-    plan_id: str
+    plan_id: UUID
     period_months: int = Field(default=1, ge=1, le=12, examples=[1])
     payment_ref: Optional[str] = Field(None, max_length=255, examples=["Zelle-REF-12345"])
     amount: float = Field(..., gt=0, examples=[29.99])

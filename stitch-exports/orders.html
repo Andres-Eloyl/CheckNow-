@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Panel de Cocina - Orders Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f47b25",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#120d0b",
+                        "card-dark": "#1c1613",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        .glass-card {
+            background: rgba(44, 34, 28, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .glow-blue {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.15);
+            border-left: 4px solid #3b82f6;
+        }
+        .glow-orange {
+            box-shadow: 0 0 25px rgba(244, 123, 37, 0.25);
+            border-left: 4px solid #f47b25;
+        }
+        .glow-green {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+            border-left: 4px solid #22c55e;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen overflow-hidden flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="flex items-center justify-between px-8 py-4 border-b border-white/10 bg-background-dark/50 backdrop-blur-md z-10">
+<div class="flex items-center gap-4">
+<div class="bg-primary/20 p-2 rounded-lg">
+<span class="material-symbols-outlined text-primary text-3xl">restaurant_menu</span>
+</div>
+<div>
+<h1 class="text-2xl font-bold tracking-tight text-slate-100">Panel de Cocina</h1>
+<p class="text-xs text-slate-400 uppercase tracking-widest font-semibold">Kitchen Display System</p>
+</div>
+</div>
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-3 bg-white/5 px-4 py-2 rounded-xl border border-white/5">
+<span class="material-symbols-outlined text-slate-400">volume_up</span>
+<div class="w-32 h-1.5 bg-white/10 rounded-full overflow-hidden">
+<div class="bg-primary h-full w-[70%]"></div>
+</div>
+</div>
+<div class="flex items-center gap-3 bg-primary/10 border border-primary/20 px-5 py-2 rounded-xl">
+<span class="material-symbols-outlined text-primary">schedule</span>
+<span class="text-2xl font-bold text-slate-100">14:25</span>
+</div>
+<button class="material-symbols-outlined text-slate-400 hover:text-white transition-colors">settings</button>
+</div>
+</header>
+<!-- Main Kanban Dashboard -->
+<main class="flex-1 overflow-hidden p-6 grid grid-cols-3 gap-6">
+<!-- Column: Pendiente -->
+<div class="flex flex-col h-full bg-white/5 rounded-2xl border border-white/5">
+<div class="p-5 border-b border-white/5 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-blue-500 animate-pulse"></span>
+<h2 class="text-xl font-bold uppercase tracking-wider text-blue-400">Pendiente</h2>
+</div>
+<span class="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm font-bold">4 Órdenes</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+<!-- Order Card 1 -->
+<div class="glass-card glow-blue rounded-xl overflow-hidden flex flex-col">
+<div class="p-5 border-b border-white/5 flex justify-between items-start">
+<span class="text-2xl font-black text-white">Mesa #12</span>
+<div class="flex flex-col items-end">
+<span class="text-blue-400 font-bold text-lg">04:12m</span>
+<span class="text-[10px] text-slate-500 uppercase font-bold">Tiempo espera</span>
+</div>
+</div>
+<div class="p-5 space-y-4">
+<div class="flex items-start gap-4">
+<span class="text-2xl font-black text-primary min-w-[40px]">2x</span>
+<div>
+<p class="text-xl font-bold text-slate-100">Classic Burger</p>
+<p class="text-sm text-slate-400 font-medium">+ Extra Bacon, No Cebolla</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<span class="text-2xl font-black text-primary min-w-[40px]">1x</span>
+<div>
+<p class="text-xl font-bold text-slate-100">Tacos al Pastor</p>
+<p class="text-sm text-slate-400 font-medium">Picante suave</p>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-primary hover:bg-primary/90 text-background-dark font-black text-xl uppercase transition-all active:scale-[0.98]">
+                        Empezar
+                    </button>
+</div>
+<!-- Order Card 2 -->
+<div class="glass-card glow-blue rounded-xl overflow-hidden flex flex-col opacity-90">
+<div class="p-5 border-b border-white/5 flex justify-between items-start">
+<span class="text-2xl font-black text-white">Llevar #402</span>
+<span class="text-slate-400 font-bold text-lg">01:45m</span>
+</div>
+<div class="p-5 space-y-4">
+<div class="flex items-start gap-4">
+<span class="text-2xl font-black text-primary min-w-[40px]">4x</span>
+<div>
+<p class="text-xl font-bold text-slate-100">Margarita Pizza</p>
+<p class="text-sm text-slate-400 font-medium">Familiar, Masa fina</p>
+</div>
+</div>
+</div>
+<button class="w-full py-4 bg-primary/20 text-primary border-t border-primary/20 font-black text-xl uppercase transition-all">
+                        Empezar
+                    </button>
+</div>
+</div>
+</div>
+<!-- Column: Preparando -->
+<div class="flex flex-col h-full bg-white/5 rounded-2xl border border-white/10 ring-1 ring-primary/20">
+<div class="p-5 border-b border-white/10 flex justify-between items-center bg-primary/5">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-primary animate-pulse"></span>
+<h2 class="text-xl font-bold uppercase tracking-wider text-primary">Preparando</h2>
+</div>
+<span class="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm font-bold">2 Órdenes</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- Order Card 3 (In Progress) -->
+<div class="glass-card glow-orange rounded-xl overflow-hidden flex flex-col">
+<div class="p-5 border-b border-white/5 flex justify-between items-start bg-primary/10">
+<span class="text-2xl font-black text-white">Mesa #4</span>
+<div class="flex flex-col items-end">
+<span class="text-primary font-bold text-2xl">12:45m</span>
+<span class="text-[10px] text-primary/70 uppercase font-bold">En Cocina</span>
+</div>
+</div>
+<div class="p-5 space-y-6">
+<div class="flex items-center gap-4">
+<div class="flex-1 flex items-start gap-4">
+<span class="text-3xl font-black text-primary min-w-[50px]">2x</span>
+<div>
+<p class="text-2xl font-bold text-slate-100">BBQ Burger</p>
+<p class="text-base text-slate-400 font-medium tracking-wide">+ Double Cheese, - Onion</p>
+</div>
+</div>
+<span class="material-symbols-outlined text-green-500 text-3xl">check_circle</span>
+</div>
+<div class="flex items-center gap-4 border-t border-white/5 pt-4">
+<div class="flex-1 flex items-start gap-4">
+<span class="text-3xl font-black text-primary min-w-[50px]">1x</span>
+<div>
+<p class="text-2xl font-bold text-slate-100">Margarita Cocktail</p>
+<p class="text-base text-slate-400 font-medium tracking-wide">Sin sal, Extra hielo</p>
+</div>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-white/20"></div>
+</div>
+</div>
+<button class="w-full py-6 bg-green-500 hover:bg-green-400 text-background-dark font-black text-2xl uppercase transition-all shadow-lg active:scale-[0.98]">
+                        TERMINAR ORDEN
+                    </button>
+</div>
+</div>
+</div>
+<!-- Column: Listo -->
+<div class="flex flex-col h-full bg-white/5 rounded-2xl border border-white/5">
+<div class="p-5 border-b border-white/5 flex justify-between items-center">
+<div class="flex items-center gap-2">
+<span class="w-3 h-3 rounded-full bg-green-500"></span>
+<h2 class="text-xl font-bold uppercase tracking-wider text-green-400">Listo</h2>
+</div>
+<span class="bg-green-500/20 text-green-400 px-3 py-1 rounded-full text-sm font-bold">1 Completada</span>
+</div>
+<div class="flex-1 overflow-y-auto p-4 space-y-4">
+<!-- Order Card 4 (Finished) -->
+<div class="glass-card glow-green rounded-xl overflow-hidden flex flex-col opacity-80">
+<div class="p-5 border-b border-white/5 flex justify-between items-start">
+<span class="text-2xl font-black text-slate-300">Mesa #8</span>
+<span class="text-green-500 font-bold text-lg italic">Listo para entrega</span>
+</div>
+<div class="p-5 space-y-3">
+<div class="flex items-center gap-3 opacity-60">
+<span class="text-xl font-bold text-slate-400 line-through">1x Ensalada César</span>
+</div>
+<div class="flex items-center gap-3 opacity-60">
+<span class="text-xl font-bold text-slate-400 line-through">2x Pasta Carbonara</span>
+</div>
+</div>
+<button class="w-full py-4 bg-white/5 hover:bg-white/10 text-white font-bold text-lg uppercase transition-all border-t border-white/5">
+                        ENTREGADO
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Status Bar -->
+<footer class="bg-card-dark px-8 py-3 flex justify-between items-center border-t border-white/10">
+<div class="flex gap-8 text-sm font-medium text-slate-400">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span>Printer Online</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span>Server Connected</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<p class="text-slate-500 text-sm italic">Última actualización: hace 30s</p>
+<button class="bg-white/5 p-2 rounded-lg hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-slate-300">refresh</span>
+</button>
+</div>
+</footer>
+</body></html>

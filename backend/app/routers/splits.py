@@ -5,7 +5,7 @@ Handles the engine for splitting order items equally, by custom fraction, or pay
 
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_
+from sqlalchemy import select, and_, or_
 import uuid
 from typing import List
 from datetime import datetime, timezone, timedelta
@@ -29,7 +29,7 @@ async def get_valid_context(token: str, ref_user_id: str, db: AsyncSession) -> t
         select(TableSession)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
     )

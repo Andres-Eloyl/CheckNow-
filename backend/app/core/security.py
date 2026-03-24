@@ -6,7 +6,7 @@ JWT token management, password hashing, and AES encryption.
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from jose import JWTError, jwt
-import bcrypt
+from passlib.context import CryptContext
 from cryptography.fernet import Fernet
 import base64
 import hashlib
@@ -16,7 +16,8 @@ from app.core.config import get_settings
 
 settings = get_settings()
 
-# Passlib removed for Python 3.13 compatibility context
+# Password hashing context (bcrypt)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 # AES encryption for sensitive data (payment references)
 _fernet_key = base64.urlsafe_b64encode(
@@ -31,30 +32,22 @@ fernet = Fernet(_fernet_key)
 
 def hash_password(password: str) -> str:
     """Hash a password using bcrypt."""
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(password.encode('utf-8'), salt).decode('utf-8')
+    return pwd_context.hash(password)
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its bcrypt hash."""
-    try:
-        return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
-    except ValueError:
-        return False
+    return pwd_context.verify(plain_password, hashed_password)
 
 
 def hash_pin(pin: str) -> str:
     """Hash a staff PIN (same as password, but semantically separate)."""
-    salt = bcrypt.gensalt()
-    return bcrypt.hashpw(pin.encode('utf-8'), salt).decode('utf-8')
+    return pwd_context.hash(pin)
 
 
 def verify_pin(plain_pin: str, hashed_pin: str) -> bool:
     """Verify a staff PIN against its hash."""
-    try:
-        return bcrypt.checkpw(plain_pin.encode('utf-8'), hashed_pin.encode('utf-8'))
-    except ValueError:
-        return False
+    return pwd_context.verify(plain_pin, hashed_pin)
 
 
 # ──────────────────────────────────────────────

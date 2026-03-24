@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CheckNow - Staff Login</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f47b25",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#120d0b",
+                        "neutral-dark": "#1c1613",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(28, 22, 19, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(244, 123, 37, 0.1);
+        }
+        .bg-mesh {
+            background-color: #120d0b;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(244, 123, 37, 0.05) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(244, 123, 37, 0.05) 0px, transparent 50%);
+        }
+    </style>
+</head>
+<body class="bg-background-dark font-display text-slate-100 antialiased overflow-hidden">
+<div class="relative flex min-h-screen w-full flex-col items-center justify-center bg-mesh px-4">
+<!-- Abstract Background Element -->
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none"></div>
+<div class="layout-container flex h-full grow flex-col w-full max-w-[440px] z-10">
+<!-- Login Card -->
+<div class="glass-card rounded-lg p-8 md:p-10 shadow-2xl">
+<!-- Logo & Header -->
+<div class="flex flex-col items-center mb-10">
+<div class="flex items-center justify-center bg-primary/10 rounded-xl p-3 mb-4 border border-primary/20">
+<span class="material-symbols-outlined text-primary text-4xl">restaurant</span>
+</div>
+<h2 class="text-white text-2xl font-bold tracking-tight">CheckNow</h2>
+<p class="text-slate-400 text-sm mt-1">Dashboard Access</p>
+</div>
+<!-- Form Content -->
+<div class="space-y-6">
+<!-- Staff Name Field -->
+<div class="flex flex-col gap-2">
+<label class="text-slate-300 text-sm font-medium px-1">Staff Name</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl">person</span>
+<input class="w-full pl-12 pr-4 py-3.5 bg-neutral-dark/50 border border-white/10 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 placeholder:text-slate-600 transition-all" placeholder="Enter full name" type="text"/>
+</div>
+</div>
+<!-- Security PIN Field -->
+<div class="flex flex-col gap-2">
+<div class="flex justify-between items-center px-1">
+<label class="text-slate-300 text-sm font-medium">Security PIN</label>
+<a class="text-primary/80 text-xs hover:text-primary transition-colors" href="#">Forgot PIN?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 text-xl">lock</span>
+<input class="w-full pl-12 pr-4 py-3.5 bg-neutral-dark/50 border border-white/10 rounded-lg text-white tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary/40 placeholder:text-slate-600 transition-all" maxlength="4" placeholder="••••" type="password"/>
+</div>
+</div>
+<!-- Action Button -->
+<div class="pt-2">
+<button class="w-full bg-gradient-to-r from-primary to-[#ff9852] hover:shadow-[0_0_20px_rgba(244,123,37,0.4)] text-background-dark font-bold py-4 rounded-lg transition-all duration-300 transform active:scale-[0.98] flex items-center justify-center gap-2">
+<span>Login to Dashboard</span>
+<span class="material-symbols-outlined text-xl">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Footer Text -->
+<div class="mt-8 text-center">
+<p class="text-slate-500 text-xs">
+                        Authorized personnel only. All access is logged.
+                    </p>
+</div>
+</div>
+<!-- Global Support Link -->
+<div class="mt-8 flex justify-center gap-6">
+<button class="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
+<span class="material-symbols-outlined text-lg">help</span>
+                    Support
+                </button>
+<button class="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm">
+<span class="material-symbols-outlined text-lg">language</span>
+                    English
+                </button>
+</div>
+</div>
+<!-- Decorative Image Bottom Right -->
+<div class="fixed bottom-0 right-0 p-10 opacity-20 hidden lg:block">
+<div class="w-64 h-64 rounded-xl border border-primary/20 overflow-hidden rotate-6">
+<img alt="Kitchen Service" class="w-full h-full object-cover" data-alt="Interior of a high-end modern restaurant kitchen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCtxie4UOUctoyirIlQhg9tSPwlGQ2EERBrRjgI98tb55lJNsDGIhnEY0HNUNQ1Ng5Hh0Qs321uzTGTaM0y85OwHPj7mymTGvyD9OpIvcbW1eKl2S5N4c2YZKzd9RymGim5z9P0z2uyHRWz7hhwA7FjNmatrcoPGhMthEqEPXR1vL05v3Yo8v6BzbS2qxJB-JhZ7YUDQM9Bl3HSnOPa7mtIlmoFifpnFIeRC-kq8nzjmeYX9P33fH_TQLqAdYr8vfyAgn3S3VFrDw"/>
+</div>
+</div>
+</div>
+</body></html>

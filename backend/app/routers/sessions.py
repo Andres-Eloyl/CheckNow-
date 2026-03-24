@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_
 
 from app.core.database import get_db
 from app.core.dependencies import get_restaurant_id, get_current_staff
@@ -19,12 +19,16 @@ from app.schemas.session import (
     SessionJoin,
     SessionResponse,
     SessionUserResponse,
-    SessionUserLinkLoyalty,
 )
-from app.routers.loyalty import _hash_phone
-from app.models.loyalty import LoyaltyAccount
 
 router = APIRouter(prefix="/api/{slug}/sessions", tags=["sessions"])
+
+def _token_filter(token_str: str):
+    try:
+        return or_(TableSession.token == token_str, TableSession.table_id == uuid.UUID(token_str))
+    except ValueError:
+        return TableSession.token == token_str
+
 
 
 @router.post("", response_model=SessionResponse, status_code=status.HTTP_201_CREATED)
@@ -67,11 +71,15 @@ async def open_session(
     # Expiration is handled by the JWT, but we also store it in DB
     expires_at = datetime.now(timezone.utc) + timedelta(hours=8)
 
+    # Only set opened_by if the token is from a staff user
+    # Owner "access" tokens have sub=restaurant_id which is not a valid staff_users FK
+    staff_id = current_user["sub"] if current_user.get("type") == "staff" else None
+
     db_session = TableSession(
         id=session_uuid,
         table_id=table.id,
         token=token,
-        opened_by=current_user["sub"],
+        opened_by=staff_id,
         expires_at=expires_at,
         status=SessionStatus.OPEN,
     )
@@ -84,11 +92,9 @@ async def open_session(
     await db.commit()
     await db.refresh(db_session)
 
-    # Prepare response (Pydantic schema expects table_number)
-    response_data = db_session.__dict__.copy()
-    response_data["table_number"] = table.number
-    
-    return response_data
+    # Prepare response — use Pydantic model_validate for proper nested serialization
+    db_session.table_number = table.number  # type: ignore[attr-defined]
+    return SessionResponse.model_validate(db_session, from_attributes=True).model_dump()
 
 
 @router.get("/{token}", response_model=SessionResponse)
@@ -106,7 +112,7 @@ async def get_session(
         select(TableSession, Table)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             Table.restaurant_id == restaurant_id,
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
@@ -121,10 +127,8 @@ async def get_session(
 
     db_session, table = row
     
-    response_data = db_session.__dict__.copy()
-    response_data["table_number"] = table.number
-    
-    return response_data
+    db_session.table_number = table.number  # type: ignore[attr-defined]
+    return SessionResponse.model_validate(db_session, from_attributes=True).model_dump()
 
 
 @router.post("/{token}/join", response_model=SessionUserResponse, status_code=status.HTTP_201_CREATED)
@@ -144,7 +148,7 @@ async def join_session(
         select(TableSession)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            _token_filter(token),
             Table.restaurant_id == restaurant_id,
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
@@ -181,9 +185,7 @@ async def join_session(
     await db.commit()
     await db.refresh(new_user)
 
-    response_data = new_user.__dict__.copy()
-    response_data["is_loyalty_linked"] = new_user.loyalty_account_id is not None
-    return response_data
+    return new_user
 
 
 @router.post("/{token}/close", response_model=SessionResponse)
@@ -202,8 +204,9 @@ async def close_session(
         select(TableSession, Table)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            _token_filter(token),
             Table.restaurant_id == restaurant_id,
+            TableSession.status != SessionStatus.CLOSED
         )
     )
     row = result.first()
@@ -230,10 +233,8 @@ async def close_session(
     await db.commit()
     await db.refresh(db_session)
 
-    response_data = db_session.__dict__.copy()
-    response_data["table_number"] = table.number
-    
-    return response_data
+    db_session.table_number = table.number  # type: ignore[attr-defined]
+    return SessionResponse.model_validate(db_session, from_attributes=True).model_dump()
 
 
 @router.get("/{token}/users", response_model=list[SessionUserResponse])
@@ -251,8 +252,9 @@ async def get_session_users(
         select(TableSession.id)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            _token_filter(token),
             Table.restaurant_id == restaurant_id,
+            TableSession.status != SessionStatus.CLOSED
         )
     )
     session_id = result.scalars().first()
@@ -266,72 +268,4 @@ async def get_session_users(
     users_result = await db.execute(
         select(SessionUser).where(SessionUser.session_id == session_id)
     )
-    users = users_result.scalars().all()
-    
-    responses = []
-    for u in users:
-        u_dict = u.__dict__.copy()
-        u_dict["is_loyalty_linked"] = u.loyalty_account_id is not None
-        responses.append(u_dict)
-        
-    return responses
-
-
-@router.post("/{token}/users/{user_id}/loyalty", response_model=SessionUserResponse)
-async def link_loyalty(
-    slug: str,
-    token: str,
-    user_id: str,
-    link_in: SessionUserLinkLoyalty,
-    restaurant_id: str = Depends(get_restaurant_id),
-    db: AsyncSession = Depends(get_db),
-):
-    """Link a phone number to a session user for loyalty points."""
-    # Verify session and user
-    result = await db.execute(
-        select(TableSession, SessionUser)
-        .join(SessionUser, TableSession.id == SessionUser.session_id)
-        .join(Table, TableSession.table_id == Table.id)
-        .where(
-            TableSession.token == token,
-            SessionUser.id == user_id,
-            Table.restaurant_id == restaurant_id
-        )
-    )
-    row = result.first()
-    if not row:
-        raise HTTPException(status_code=404, detail="Session or user not found")
-        
-    db_session, user = row
-    
-    phone_hash = _hash_phone(link_in.phone_number)
-    
-    # Verify or create loyalty account
-    acc_result = await db.execute(
-        select(LoyaltyAccount).where(
-            LoyaltyAccount.restaurant_id == restaurant_id,
-            LoyaltyAccount.phone_hash == phone_hash
-        )
-    )
-    account = acc_result.scalars().first()
-    
-    if not account:
-        account = LoyaltyAccount(
-            restaurant_id=restaurant_id,
-            phone_hash=phone_hash,
-            points_balance=0,
-            total_spent_usd=0.0,
-            visit_count=0
-        )
-        db.add(account)
-        await db.flush() # assign ID quickly without committing full transaction yet
-        
-    user.phone_hash = phone_hash
-    user.loyalty_account_id = account.id
-    
-    await db.commit()
-    await db.refresh(user)
-    
-    response_data = user.__dict__.copy()
-    response_data["is_loyalty_linked"] = True
-    return response_data
+    return users_result.scalars().all()

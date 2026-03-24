@@ -5,6 +5,7 @@ CheckNow! — Session Schemas
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
+from uuid import UUID
 
 
 class SessionCreate(BaseModel):
@@ -19,24 +20,19 @@ class SessionJoin(BaseModel):
 
 class SessionUserResponse(BaseModel):
     """Response schema for a session user."""
-    id: str
+    id: UUID
     alias: str
     color: str
     emoji: Optional[str] = None
-    is_loyalty_linked: bool = False
     joined_at: datetime
 
     model_config = {"from_attributes": True}
 
-class SessionUserLinkLoyalty(BaseModel):
-    """Request schema for linking phone to session user."""
-    phone_number: str = Field(..., description="Número celular del comensal")
-
 
 class SessionResponse(BaseModel):
     """Response schema for session info."""
-    id: str
-    table_id: str
+    id: UUID
+    table_id: UUID
     table_number: Optional[int] = None
     token: str
     status: str

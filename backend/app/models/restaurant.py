@@ -5,7 +5,7 @@ CheckNow! — Restaurant & Config Models
 import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
-    String, Boolean, DateTime, ForeignKey, Integer
+    String, Boolean, DateTime, ForeignKey
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB, NUMERIC
@@ -72,10 +72,8 @@ class RestaurantConfig(Base):
     wifi_ssid: Mapped[str | None] = mapped_column(String(100))
     cross_sell_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     loyalty_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
-    # Cuántos puntos gana el comensal por cada USD gastado (ej. 10)
-    points_reward_rate: Mapped[int] = mapped_column(Integer, default=10)
-    # Cuánto vale cada punto al canjearlo en USD (ej. 0.01 = 1 centavo)
-    points_redemption_value: Mapped[float] = mapped_column(NUMERIC(5, 4), default=0.0100)
+    points_reward_rate: Mapped[float] = mapped_column(NUMERIC(5, 4), default=0.0500)
+    points_redemption_value: Mapped[float] = mapped_column(NUMERIC(10, 2), default=1.00)
 
     # Relationships
     restaurant: Mapped["Restaurant"] = relationship(back_populates="config")

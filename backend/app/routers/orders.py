@@ -5,7 +5,7 @@ Handles the collaborative cart and order lifecycle.
 
 from fastapi import APIRouter, Depends, HTTPException, status, Header
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, or_
 from typing import List, Optional
 import uuid
 from datetime import datetime, timezone
@@ -32,7 +32,7 @@ async def get_valid_session(token: str, restaurant_id: str, db: AsyncSession) ->
         select(TableSession)
         .join(Table, TableSession.table_id == Table.id)
         .where(
-            TableSession.token == token,
+            or_(TableSession.token == token, TableSession.table_id == token),
             Table.restaurant_id == restaurant_id,
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )

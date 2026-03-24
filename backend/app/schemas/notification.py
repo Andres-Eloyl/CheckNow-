@@ -5,11 +5,12 @@ CheckNow! — Notification Schemas
 from pydantic import BaseModel
 from typing import Optional
 from datetime import datetime
+from uuid import UUID
 
 
 class NotificationResponse(BaseModel):
     """Response schema for a notification."""
-    id: str
+    id: UUID
     table_number: Optional[int] = None
     type: str
     title: str

@@ -4,6 +4,7 @@ CheckNow! — Auth Schemas
 
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional
+from uuid import UUID
 
 
 # ──────────────────────────────────────────────
@@ -32,7 +33,7 @@ class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
     token_type: str = "bearer"
-    restaurant_id: str
+    restaurant_id: UUID
     slug: str
 
 
@@ -55,6 +56,16 @@ class StaffTokenResponse(BaseModel):
     """Response schema for staff authentication."""
     access_token: str
     token_type: str = "bearer"
-    staff_id: str
+    staff_id: UUID
     name: str
     role: str
+
+class RestaurantMeResponse(BaseModel):
+    """Response schema for current restaurant profile."""
+    id: UUID
+    name: str
+    slug: str
+    email: EmailStr
+    phone: Optional[str] = None
+    country: str
+    is_active: bool
