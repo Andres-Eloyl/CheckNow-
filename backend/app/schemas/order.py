@@ -33,6 +33,7 @@ class OrderItemResponse(BaseModel):
     is_shared: bool
     is_locked: bool
     created_at: datetime
+    sent_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

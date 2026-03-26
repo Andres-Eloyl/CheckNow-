@@ -6,7 +6,7 @@ Real-time connection for comensales at a table.
 import logging
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, or_
 
 from app.core.database import get_db
 from app.models.session import TableSession, SessionStatus
@@ -20,10 +20,7 @@ router = APIRouter(tags=["websockets"])
 async def get_session_snapshot(session_id: str, db: AsyncSession) -> dict:
     """
     Generate a full snapshot of the session state.
-    This includes users, orders, and balance.
-    For now, it returns a stub that will be expanded when orders are implemented.
     """
-    # TODO: Expand this when OrderItem and Split models are ready
     return {
         "users": [],
         "orders": [],
@@ -39,57 +36,47 @@ async def websocket_session_endpoint(
 ):
     """
     WebSocket connection for a comensal at a table.
+    Accepts both JWT session token and tableId (UUID) for matching.
     """
-    # 1. Verify session token is valid and active
+    # 1. Verify session token is valid and active — match by JWT token OR tableId UUID
     result = await db.execute(
         select(TableSession)
         .where(
-            TableSession.token == session_token,
+            or_(TableSession.token == session_token, TableSession.table_id == session_token),
             TableSession.status.in_([SessionStatus.OPEN, SessionStatus.IN_PROGRESS]),
         )
     )
     db_session = result.scalars().first()
 
     if not db_session:
-        # Session invalid or closed, reject connection
         await websocket.close(code=4004, reason="Session invalid or closed")
         return
 
-    channel_name = f"ws:session:{session_token}"
+    # Use table_id as channel name so broadcasts from REST endpoints
+    # (which use table_id) reach the right subscribers
+    channel_name = f"ws:session:{str(db_session.table_id)}"
 
     # 2. Accept connection and add to manager
     await ws_manager.connect(websocket, channel_name)
     logger.info(f"New WS connection to {channel_name}")
 
     try:
-        # Wait for the first message to identify the user
-        auth_message = await websocket.receive_json()
-        if auth_message.get("event") != "identify":
-            await websocket.close(code=4003, reason="Expected identify event")
-            return
-            
-        session_user_id = auth_message.get("data", {}).get("session_user_id")
-        if not session_user_id:
-            await websocket.close(code=4003, reason="Missing session_user_id")
-            return
-            
-        # Optional: verify session_user_id exists here
-        
-        # 3. Send initial snapshot
+        # 3. Send initial snapshot immediately (no blocking identify step)
         snapshot = await get_session_snapshot(db_session.id, db)
         await websocket.send_json({
             "event": "snapshot",
             "data": snapshot
         })
 
-        # 4. Message loop
+        # 4. Message loop — handle pings and optional identify
         while True:
-            # Comensales don't send much to the server via WS (mostly via REST)
-            # They only send pings
             data = await websocket.receive_json()
             if data.get("event") == "ping":
                 await websocket.send_json({"event": "pong", "data": {}})
-                
+            elif data.get("event") == "identify":
+                # Accept but don't require — backward compatible
+                await websocket.send_json({"event": "identified", "data": {}})
+
     except WebSocketDisconnect:
         logger.info(f"WS disconnected from {channel_name}")
     except Exception as e:

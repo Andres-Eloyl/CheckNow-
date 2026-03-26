@@ -265,6 +265,7 @@ export interface OrderItemResponse {
   is_shared: boolean;
   is_locked: boolean;
   created_at: string;
+  sent_at?: string;
 }
 
 export type OrderStatus = 'pending' | 'sent' | 'preparing' | 'ready' | 'delivered' | 'cancelled';

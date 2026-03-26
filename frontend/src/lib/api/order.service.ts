@@ -34,7 +34,7 @@ export const orderService = {
 
   /** Get all orders for the current table session. */
   async getSessionOrders(slug: string, token: string): Promise<OrderItemResponse[]> {
-    return api.get<OrderItemResponse[]>(`/api/${slug}/sessions/${token}/orders`);
+    return api.get<OrderItemResponse[]>(`/api/${slug}/sessions/${token}/orders`, { sessionAuth: true });
   },
 
   /** Confirm all pending orders and send them to kitchen/bar. */

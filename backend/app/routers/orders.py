@@ -105,9 +105,9 @@ async def add_order_item(
     await db.commit()
     await db.refresh(order)
 
-    # Broadcast to session (cart update)
+    # Broadcast to session (cart update) — use table_id as channel key
     await ws_manager.broadcast(
-        f"ws:session:{token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "item_added",
             "data": {
@@ -165,9 +165,9 @@ async def remove_order_item(
     await db.delete(order)
     await db.commit()
 
-    # Broadcast to session
+    # Broadcast to session — use table_id as channel key
     await ws_manager.broadcast(
-        f"ws:session:{token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "item_removed",
             "data": {
@@ -240,9 +240,9 @@ async def confirm_orders(
     table_result = await db.execute(select(Table).where(Table.id == db_session.table_id))
     table = table_result.scalars().first()
 
-    # WS Notification for Comensales
+    # WS Notification for Comensales — use table_id as channel key
     await ws_manager.broadcast(
-        f"ws:session:{token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "order_confirmed",
             "data": {
@@ -252,10 +252,16 @@ async def confirm_orders(
         }
     )
 
-    # WS Notification for Staff Dashboard
-    # Group items to send to dashboard (simplified view)
+    # WS Notification for Staff Dashboard — enriched with names for instant display
     kitchen_items = [
-        {"id": str(o.id), "menu_item_id": str(o.menu_item_id), "qty": o.quantity, "modifiers": o.modifiers}
+        {
+            "id": str(o.id),
+            "menu_item_id": str(o.menu_item_id),
+            "menu_item_name": o.menu_item.name if o.menu_item else "Item",
+            "qty": o.quantity,
+            "modifiers": o.modifiers,
+            "notes": o.notes,
+        }
         for o in pending_orders
     ]
     
@@ -264,9 +270,10 @@ async def confirm_orders(
         {
             "event": "new_order",
             "data": {
-                "table": table.number,
+                "table": table.number if table else "?",
+                "table_number": table.number if table else "?",
                 "items": kitchen_items,
-                "destination": "kitchen" # Usually split between bar and kitchen
+                "user_alias": user.alias,
             }
         }
     )
@@ -322,12 +329,13 @@ async def update_order_status(
     await db.commit()
     await db.refresh(order)
 
-    # WS Notification for Comensales
+    # WS Notification for Comensales — use table_id as channel key
     await ws_manager.broadcast(
-        f"ws:session:{db_session.token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "order_status",
             "data": {
+                "order_id": str(order.id),
                 "item": menu_item.name,
                 "status": new_status.value
             }

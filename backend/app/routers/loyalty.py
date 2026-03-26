@@ -178,7 +178,7 @@ async def redeem_points(
 
     # Broadcast del pago (descuento) a la mesa
     await ws_manager.broadcast(
-        f"ws:session:{session.token}",
+        f"ws:session:{str(session.table_id)}",
         {
             "event": "payment_verified",
             "data": {

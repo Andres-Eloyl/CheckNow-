@@ -259,7 +259,7 @@ async def verify_payment(
 
     # Let the user know their payment was approved
     await ws_manager.broadcast(
-        f"ws:session:{db_session.token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "payment_verified",
             "data": {
@@ -312,7 +312,7 @@ async def reject_payment(
 
     # Let the user know
     await ws_manager.broadcast(
-        f"ws:session:{db_session.token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "payment_rejected",
             "data": {

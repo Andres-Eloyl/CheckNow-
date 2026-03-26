@@ -155,7 +155,7 @@ async def create_split(
 
     # 5. Broadcast split proposal to session
     await ws_manager.broadcast(
-        f"ws:session:{token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "split_proposed",
             "data": {
@@ -212,7 +212,7 @@ async def accept_split(
     
     # Broadcast acceptance
     await ws_manager.broadcast(
-        f"ws:session:{token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "split_accepted",
             "data": {
@@ -300,7 +300,7 @@ async def pay_for_someone(
 
     # 4. Broadcast the generosity
     await ws_manager.broadcast(
-        f"ws:session:{token}",
+        f"ws:session:{str(db_session.table_id)}",
         {
             "event": "yo_invito",
             "data": {
