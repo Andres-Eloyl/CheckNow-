@@ -45,12 +45,12 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               initial={{ opacity: 0, y: -50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-              className={`pointer-events-auto w-full flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg border backdrop-blur-md ${
+              className={`pointer-events-auto w-full flex items-center gap-3 px-4 py-3 rounded-2xl shadow-lg border backdrop-blur-xl ${
                 t.type === 'success' 
-                  ? 'bg-emerald-50/90 dark:bg-emerald-950/90 border-emerald-200/50 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-200' 
+                  ? 'bg-success/15 border-success/25 text-success' 
                   : t.type === 'error'
-                  ? 'bg-red-50/90 dark:bg-red-950/90 border-red-200/50 dark:border-red-800/50 text-red-800 dark:text-red-200'
-                  : 'bg-white/90 dark:bg-slate-800/90 border-slate-200/50 dark:border-slate-700/50 text-slate-800 dark:text-slate-200'
+                  ? 'bg-danger/15 border-danger/25 text-danger'
+                  : 'bg-surface/90 border-neutral-border text-white'
               }`}
             >
               <span className="material-symbols-outlined text-[20px] shrink-0">

@@ -11,9 +11,9 @@ import { getStaffWebSocketUrl } from '@/lib/api/client';
 import type { OrderItemResponse } from '@/types/api.types';
 
 const COLUMNS = [
-  { key: 'sent', label: '🔴 Recibido', color: 'border-blue-500/30 bg-blue-500/5', nextStatus: 'preparing', nextLabel: '🍳 Preparar', nextColor: 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30' },
-  { key: 'preparing', label: '🟡 Preparando', color: 'border-amber-500/30 bg-amber-500/5', nextStatus: 'ready', nextLabel: '✅ ¡Listo!', nextColor: 'bg-green-500/20 text-green-400 hover:bg-green-500/30' },
-  { key: 'ready', label: '🟢 Listo', color: 'border-green-500/30 bg-green-500/5', nextStatus: 'delivered', nextLabel: '📦 Entregado', nextColor: 'bg-primary/20 text-primary hover:bg-primary/30' },
+  { key: 'sent', label: '🔴 Recibido', borderClass: 'border-blue-500/30', bgClass: 'bg-blue-500/5', nextStatus: 'preparing', nextLabel: '🍳 Preparar', nextBtnClass: 'bg-warning/20 text-warning hover:bg-warning/30' },
+  { key: 'preparing', label: '🟡 Preparando', borderClass: 'border-warning/30', bgClass: 'bg-warning/5', nextStatus: 'ready', nextLabel: '✅ ¡Listo!', nextBtnClass: 'bg-success/20 text-success hover:bg-success/30' },
+  { key: 'ready', label: '🟢 Listo', borderClass: 'border-success/30', bgClass: 'bg-success/5', nextStatus: 'delivered', nextLabel: '📦 Entregado', nextBtnClass: 'bg-primary/20 text-primary hover:bg-primary/30' },
 ];
 
 function ElapsedTime({ since }: { since: string }) {
@@ -31,7 +31,7 @@ function ElapsedTime({ since }: { since: string }) {
     return () => clearInterval(interval);
   }, [since]);
 
-  return <span className="text-[10px] text-slate-500 font-mono tabular-nums">⏱ {elapsed}</span>;
+  return <span className="text-[10px] text-text-muted font-mono tabular-nums">⏱ {elapsed}</span>;
 }
 
 export default function KitchenPage() {
@@ -50,7 +50,6 @@ export default function KitchenPage() {
     if (!slug) return;
     try {
       const data = await orderService.getActiveOrders(slug);
-      // Detect new orders for flash animation
       const sentCount = data.filter((o: OrderItemResponse) => o.status === 'sent').length;
       if (sentCount > prevOrderCount.current && prevOrderCount.current > 0) {
         setFlashNew(true);
@@ -65,7 +64,7 @@ export default function KitchenPage() {
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
-  // Auto-polling fallback every 15s in case WS fails
+  // Auto-polling fallback every 15s
   useEffect(() => {
     const interval = setInterval(fetchOrders, 15000);
     return () => clearInterval(interval);
@@ -102,7 +101,6 @@ export default function KitchenPage() {
       const gain = ctx.createGain();
       gain.connect(ctx.destination);
       gain.gain.value = 0.3;
-      // Two-tone beep
       const osc1 = ctx.createOscillator();
       osc1.connect(gain);
       osc1.frequency.value = 800;
@@ -124,7 +122,6 @@ export default function KitchenPage() {
     setUpdating(orderId);
     try {
       await orderService.updateOrderStatus(slug, orderId, { status: newStatus as OrderItemResponse['status'] });
-      // Optimistic update
       if (newStatus === 'delivered') {
         setOrders(prev => prev.filter(o => o.id !== orderId));
       } else {
@@ -155,8 +152,8 @@ export default function KitchenPage() {
           </h1>
           <div className="flex items-center gap-3 mt-1">
             <p className="text-text-muted text-sm">{orders.length} pedidos activos</p>
-            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${isConnected ? 'bg-emerald-500/10 text-emerald-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-yellow-400'}`} />
+            <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-bold ${isConnected ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+              <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-success animate-pulse' : 'bg-warning'}`} />
               {isConnected ? 'En vivo' : 'Reconectando'}
             </div>
           </div>
@@ -180,7 +177,7 @@ export default function KitchenPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {COLUMNS.map(col => (
-          <div key={col.key} className={`rounded-2xl border p-4 ${col.color} min-h-[300px]`}>
+          <div key={col.key} className={`rounded-2xl border p-4 ${col.borderClass} ${col.bgClass} min-h-[300px]`}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-bold text-sm">{col.label}</h2>
               <span className="text-xs bg-white/10 px-2 py-1 rounded-full font-bold tabular-nums">{ordersByStatus(col.key).length}</span>
@@ -194,7 +191,7 @@ export default function KitchenPage() {
                       <div className="flex-1 min-w-0">
                         <p className="font-bold text-sm">{order.menu_item_name || 'Item'}</p>
                         <div className="flex items-center gap-2 mt-0.5">
-                          {order.quantity > 1 && <span className="text-xs text-text-muted bg-white/5 px-1.5 py-0.5 rounded font-bold">x{order.quantity}</span>}
+                          {order.quantity > 1 && <span className="text-xs text-text-muted bg-surface-2 px-1.5 py-0.5 rounded font-bold">x{order.quantity}</span>}
                           {order.session_user_alias && <span className="text-xs text-text-muted">👤 {order.session_user_alias}</span>}
                           {order.sent_at && <ElapsedTime since={order.sent_at} />}
                         </div>
@@ -212,7 +209,7 @@ export default function KitchenPage() {
                     <button
                       disabled={updating === order.id}
                       onClick={() => handleStatusChange(order.id, col.nextStatus)}
-                      className={`w-full py-2.5 text-xs font-bold rounded-lg disabled:opacity-50 transition-all active:scale-[0.98] ${col.nextColor}`}
+                      className={`w-full py-2.5 text-xs font-bold rounded-lg disabled:opacity-50 transition-all active:scale-[0.98] ${col.nextBtnClass}`}
                     >
                       {updating === order.id ? (
                         <div className="size-4 border-2 border-current border-t-transparent rounded-full animate-spin mx-auto" />

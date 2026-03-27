@@ -9,6 +9,7 @@ import { orderService } from '@/lib/api/order.service';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { getComensalWebSocketUrl } from '@/lib/api/client';
 import { useToast } from '@/components/ui/Toast';
+import { BottomNavigation } from '@/components/ui/BottomNavigation';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { OrderItemResponse } from '@/types/api.types';
 
@@ -18,7 +19,7 @@ export default function GuestCartPage() {
   const tableId = params.tableId;
   const router = useRouter();
 
-  const { sessionUserId, sessionToken, slug: storeSlug } = useSessionStore();
+  const { sessionUserId, sessionToken } = useSessionStore();
   const { toast } = useToast();
 
   const [orders, setOrders] = useState<OrderItemResponse[]>([]);
@@ -102,38 +103,38 @@ export default function GuestCartPage() {
     }
   };
 
-  const statusConfig: Record<string, { label: string; icon: string; color: string }> = {
-    sent: { label: 'Recibido', icon: 'schedule', color: 'text-yellow-400' },
-    preparing: { label: 'Preparando', icon: 'skillet', color: 'text-orange-400' },
-    ready: { label: '¡Listo!', icon: 'check_circle', color: 'text-emerald-400' },
-    delivered: { label: 'Entregado', icon: 'task_alt', color: 'text-emerald-500' },
+  const statusConfig: Record<string, { label: string; icon: string; badgeClass: string }> = {
+    sent:      { label: 'Recibido',  icon: 'schedule',      badgeClass: 'badge-sent' },
+    preparing: { label: 'Preparando', icon: 'skillet',       badgeClass: 'badge-preparing' },
+    ready:     { label: '¡Listo!',   icon: 'check_circle',  badgeClass: 'badge-ready' },
+    delivered: { label: 'Entregado', icon: 'task_alt',      badgeClass: 'badge-delivered' },
   };
 
   if (loading) {
     return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-[#0A0A0B]">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background-dark">
         <LoadingSpinner />
       </div>
     );
   }
 
   return (
-    <div className="bg-[#0A0A0B] min-h-[100dvh] flex flex-col pb-24 font-[Inter]">
+    <div className="bg-background-dark min-h-[100dvh] flex flex-col pb-24 font-display">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-[#0A0A0B]/90 backdrop-blur-xl border-b border-white/5 px-5 py-4">
+      <header className="sticky top-0 z-50 glass px-5 py-4">
         <div className="flex items-center justify-between max-w-2xl mx-auto">
           <div className="flex items-center gap-3">
-            <Link href={`/r/${slug}/t/${tableId}/menu`} className="size-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
-              <span className="material-symbols-outlined text-slate-400">arrow_back</span>
+            <Link href={`/r/${slug}/t/${tableId}/menu`} className="size-10 rounded-xl bg-surface flex items-center justify-center hover:bg-surface-2 transition-colors active:scale-95">
+              <span className="material-symbols-outlined text-text-muted">arrow_back</span>
             </Link>
             <div>
               <h1 className="text-lg font-bold text-white">Tu Orden</h1>
-              <p className="text-xs text-slate-500">{orders.length} {orders.length === 1 ? 'item' : 'items'} en la mesa</p>
+              <p className="text-xs text-text-muted">{orders.length} {orders.length === 1 ? 'item' : 'items'} en la mesa</p>
             </div>
           </div>
           {/* Connection indicator */}
-          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'bg-emerald-500/10 text-emerald-400' : 'bg-yellow-500/10 text-yellow-400'}`}>
-            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-emerald-400 animate-pulse' : 'bg-yellow-400'}`} />
+          <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isConnected ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'}`}>
+            <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? 'bg-success animate-pulse' : 'bg-warning'}`} />
             {isConnected ? 'En vivo' : 'Reconectando...'}
           </div>
         </div>
@@ -148,10 +149,10 @@ export default function GuestCartPage() {
             exit={{ opacity: 0, y: -20, height: 0 }}
             className="mx-5 mt-3"
           >
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-center">
+            <div className="p-4 rounded-2xl bg-success/10 border border-success/20 text-center">
               <span className="text-2xl">🍳</span>
-              <p className="text-emerald-400 font-bold text-sm mt-1">¡Enviado a cocina!</p>
-              <p className="text-slate-500 text-xs mt-0.5">Te avisaremos cuando esté listo</p>
+              <p className="text-success font-bold text-sm mt-1">¡Enviado a cocina!</p>
+              <p className="text-text-muted text-xs mt-0.5">Te avisaremos cuando esté listo</p>
             </div>
           </motion.div>
         )}
@@ -161,14 +162,14 @@ export default function GuestCartPage() {
         {/* Empty state */}
         {orders.length === 0 && (
           <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-            <div className="size-20 rounded-3xl bg-white/5 flex items-center justify-center mb-5">
-              <span className="material-symbols-outlined text-4xl text-slate-600" style={{ fontVariationSettings: "'FILL' 1" }}>shopping_bag</span>
+            <div className="size-20 rounded-3xl bg-surface flex items-center justify-center mb-5">
+              <span className="material-symbols-outlined text-4xl text-text-muted" style={{ fontVariationSettings: "'FILL' 1" }}>shopping_bag</span>
             </div>
             <h2 className="text-xl font-bold text-white mb-2">Tu carrito está vacío</h2>
-            <p className="text-slate-500 text-sm mb-6 max-w-[250px]">Explora el menú y agrega deliciosos platos a tu orden</p>
+            <p className="text-text-muted text-sm mb-6 max-w-[250px]">Explora el menú y agrega deliciosos platos a tu orden</p>
             <Link
               href={`/r/${slug}/t/${tableId}/menu`}
-              className="h-12 px-8 bg-primary text-white font-bold text-sm rounded-2xl flex items-center gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all"
+              className="h-12 px-8 bg-primary text-white font-bold text-sm rounded-2xl flex items-center gap-2 shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-all active:scale-95"
             >
               <span className="material-symbols-outlined text-[20px]">restaurant_menu</span>
               Ver Menú
@@ -197,30 +198,30 @@ export default function GuestCartPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
-                    className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.05] transition-colors"
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-surface border border-neutral-border hover:bg-surface-2 transition-colors"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-white truncate">{order.menu_item_name || 'Item'}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-primary font-bold text-sm">${(order.unit_price * order.quantity).toFixed(2)}</span>
                         {order.quantity > 1 && (
-                          <span className="text-slate-500 text-xs">x{order.quantity}</span>
+                          <span className="text-text-muted text-xs">x{order.quantity}</span>
                         )}
                         {order.notes && (
-                          <span className="text-slate-600 text-xs truncate max-w-[120px]">— {order.notes}</span>
+                          <span className="text-text-muted text-xs truncate max-w-[120px]">— {order.notes}</span>
                         )}
                       </div>
                     </div>
                     <button
                       onClick={() => handleDeleteItem(order.id)}
                       disabled={deletingId === order.id}
-                      className="size-9 rounded-xl bg-red-500/10 hover:bg-red-500/20 flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
+                      className="size-9 rounded-xl bg-danger/10 hover:bg-danger/20 flex items-center justify-center transition-all active:scale-90 disabled:opacity-40"
                       aria-label="Eliminar item"
                     >
                       {deletingId === order.id ? (
-                        <div className="size-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                        <div className="size-4 border-2 border-danger border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <span className="material-symbols-outlined text-red-400 text-[18px]">delete</span>
+                        <span className="material-symbols-outlined text-danger text-[18px]">delete</span>
                       )}
                     </button>
                   </motion.div>
@@ -234,16 +235,16 @@ export default function GuestCartPage() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: 20, transition: { duration: 0.2 } }}
-                    className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/5"
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-surface/50 border border-neutral-border"
                   >
-                    <div className="size-8 rounded-full bg-indigo-500/20 flex items-center justify-center text-sm shrink-0">
+                    <div className="size-8 rounded-full bg-secondary/20 flex items-center justify-center text-sm shrink-0">
                       👤
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-white/80 truncate">{order.menu_item_name || 'Item'}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-primary/80 font-bold text-sm">${(order.unit_price * order.quantity).toFixed(2)}</span>
-                        <span className="text-slate-600 text-xs">{order.session_user_alias || 'Otro'}</span>
+                        <span className="text-text-muted text-xs">{order.session_user_alias || 'Otro'}</span>
                       </div>
                     </div>
                   </motion.div>
@@ -252,9 +253,9 @@ export default function GuestCartPage() {
             </div>
 
             {/* Subtotal + Confirm Button */}
-            <div className="mt-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+            <div className="mt-4 p-4 rounded-2xl bg-surface border border-neutral-border">
               <div className="flex justify-between items-center mb-4">
-                <span className="text-sm text-slate-400">Subtotal carrito</span>
+                <span className="text-sm text-text-muted">Subtotal carrito</span>
                 <span className="text-lg font-bold text-white">${pendingTotal.toFixed(2)}</span>
               </div>
               <motion.button
@@ -276,11 +277,11 @@ export default function GuestCartPage() {
         {sentOrders.length > 0 && (
           <section>
             <div className="flex items-center gap-2 mb-4">
-              <div className="size-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                <span className="material-symbols-outlined text-emerald-400 text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>restaurant</span>
+              <div className="size-8 rounded-xl bg-success/10 flex items-center justify-center">
+                <span className="material-symbols-outlined text-success text-[18px]" style={{ fontVariationSettings: "'FILL' 1" }}>restaurant</span>
               </div>
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">Enviado a Cocina</h2>
-              <span className="ml-auto bg-emerald-500/10 text-emerald-400 text-xs font-bold px-2.5 py-1 rounded-full">{sentOrders.length}</span>
+              <span className="ml-auto bg-success/10 text-success text-xs font-bold px-2.5 py-1 rounded-full">{sentOrders.length}</span>
             </div>
 
             <div className="space-y-2">
@@ -290,19 +291,19 @@ export default function GuestCartPage() {
                   <motion.div
                     key={order.id}
                     layout
-                    className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/5"
+                    className="flex items-center gap-3 p-4 rounded-2xl bg-surface border border-neutral-border"
                   >
                     <div className="flex-1 min-w-0">
                       <p className="font-semibold text-sm text-white truncate">{order.menu_item_name || 'Item'}</p>
                       <div className="flex items-center gap-2 mt-1">
                         <span className="text-primary font-bold text-sm">${(order.unit_price * order.quantity).toFixed(2)}</span>
                         {order.session_user_alias && (
-                          <span className="text-slate-600 text-xs">{order.session_user_alias}</span>
+                          <span className="text-text-muted text-xs">{order.session_user_alias}</span>
                         )}
                       </div>
                     </div>
-                    {/* Status badge */}
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/5 ${cfg.color}`}>
+                    {/* Status badge — using design system badge classes */}
+                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl ${cfg.badgeClass}`}>
                       <span className="material-symbols-outlined text-[16px]" style={{ fontVariationSettings: "'FILL' 1" }}>{cfg.icon}</span>
                       <span className="text-xs font-bold">{cfg.label}</span>
                     </div>
@@ -312,9 +313,9 @@ export default function GuestCartPage() {
             </div>
 
             {/* Sent subtotal */}
-            <div className="mt-4 p-4 rounded-2xl bg-white/[0.02] border border-white/5">
+            <div className="mt-4 p-4 rounded-2xl bg-surface border border-neutral-border">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-slate-400">Total en cocina</span>
+                <span className="text-sm text-text-muted">Total en cocina</span>
                 <span className="text-lg font-bold text-white">${sentTotal.toFixed(2)}</span>
               </div>
             </div>
@@ -322,20 +323,20 @@ export default function GuestCartPage() {
         )}
       </main>
 
-      {/* ─── BOTTOM ACTIONS ─── */}
+      {/* ─── BOTTOM ACTIONS (above BottomNav) ─── */}
       {sentOrders.length > 0 && (
         <div className="fixed bottom-20 inset-x-0 px-5 pb-[env(safe-area-inset-bottom)] z-40">
           <div className="max-w-2xl mx-auto flex gap-3">
             <Link
               href={`/r/${slug}/t/${tableId}/menu`}
-              className="flex-1 h-13 bg-white/5 hover:bg-white/10 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all border border-white/5"
+              className="flex-1 h-13 bg-surface hover:bg-surface-2 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all border border-neutral-border active:scale-[0.98]"
             >
               <span className="material-symbols-outlined text-[20px]">add</span>
               Pedir Más
             </Link>
             <Link
               href={`/r/${slug}/t/${tableId}/checkout`}
-              className="flex-1 h-13 bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-emerald-500/25"
+              className="flex-1 h-13 bg-primary hover:brightness-110 text-white font-bold text-sm rounded-2xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-primary/25 active:scale-[0.98]"
             >
               <span className="material-symbols-outlined text-[20px]" style={{ fontVariationSettings: "'FILL' 1" }}>payments</span>
               Ir a Pagar
@@ -343,6 +344,8 @@ export default function GuestCartPage() {
           </div>
         </div>
       )}
+
+      <BottomNavigation />
     </div>
   );
 }

@@ -16,7 +16,7 @@ router = APIRouter(tags=["Health"])
 @router.get("/health")
 async def health_check(db: AsyncSession = Depends(get_db)):
     """Full health check — database + redis."""
-    health = {"status": "ok", "db": "unknown", "redis": "unknown"}
+    health = {"status": "ok", "db": "unknown", "redis": "unknown", "hola": "gente"}
 
     # Check database
     try:

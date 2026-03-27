@@ -100,18 +100,18 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
             animate={{ y: 0 }}
             exit={{ y: '100%', transition: { type: "tween", duration: 0.25, ease: "easeIn" } }}
             transition={{ type: 'spring', damping: 28, stiffness: 220, mass: 0.8 }}
-            className="fixed bottom-0 inset-x-0 h-[92vh] max-h-[850px] bg-white dark:bg-[#0A0A0B] rounded-t-[36px] z-[60] overflow-hidden flex flex-col shadow-2xl pointer-events-auto max-w-2xl mx-auto"
+            className="fixed bottom-0 inset-x-0 h-[92vh] max-h-[850px] bg-background-dark rounded-t-[36px] z-[60] overflow-hidden flex flex-col shadow-2xl pointer-events-auto max-w-2xl mx-auto"
             role="dialog"
             aria-modal="true"
             aria-labelledby="modal-title"
           >
             <div className="absolute top-3 inset-x-0 flex justify-center z-20 cursor-grab active:cursor-grabbing pb-8">
-              <div className="w-14 h-1.5 bg-white/70 backdrop-blur-md rounded-full shadow-[0_1px_2px_rgba(0,0,0,0.1)]" />
+              <div className="w-14 h-1.5 bg-white/40 backdrop-blur-md rounded-full" />
             </div>
 
-            <div className="relative h-[35%] shrink-0 bg-slate-100 dark:bg-neutral-900 border-b border-slate-100 dark:border-white/5">
+            <div className="relative h-[35%] shrink-0 bg-surface border-b border-neutral-border">
               <img src={item.image_url || placeholderImage} className="w-full h-full object-cover" alt="" aria-hidden="true" />
-              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-white dark:from-[#0A0A0B] to-transparent pointer-events-none"></div>
+              <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background-dark to-transparent pointer-events-none"></div>
               <button 
                 type="button"
                 onClick={onClose}
@@ -124,20 +124,20 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
 
             <div className="flex-1 overflow-y-auto px-6 py-4 pb-32 overscroll-contain">
               <div className="flex justify-between items-start gap-4">
-                <h2 id="modal-title" className="text-[26px] lg:text-[32px] font-black text-slate-900 dark:text-white leading-tight tracking-tight">{item.name}</h2>
+                <h2 id="modal-title" className="text-[26px] lg:text-[32px] font-black text-white leading-tight tracking-tight">{item.name}</h2>
                 <span className="text-[26px] font-black text-primary shrink-0 -mt-1 tracking-tight">${item.price_usd.toFixed(2)}</span>
               </div>
-              <p className="text-slate-500 dark:text-slate-400 mt-2 text-[15px] lg:text-[17px] leading-relaxed max-w-prose">{item.description || ''}</p>
+              <p className="text-text-muted mt-2 text-[15px] lg:text-[17px] leading-relaxed max-w-prose">{item.description || ''}</p>
               
               {/* Modifiers from API */}
               {item.modifiers.length > 0 && (
-                <div className="mt-8 border-t border-slate-100 dark:border-white/5 pt-6">
+                <div className="mt-8 border-t border-neutral-border pt-6">
                   <div className="flex justify-between items-center mb-5">
-                    <h3 className="font-bold text-[18px] text-slate-900 dark:text-white flex items-center gap-2">
-                      <span className="material-symbols-outlined text-[20px] text-slate-400">tune</span>
+                    <h3 className="font-bold text-[18px] text-white flex items-center gap-2">
+                      <span className="material-symbols-outlined text-[20px] text-text-muted">tune</span>
                       ¿Alguna preferencia?
                     </h3>
-                    <span className="bg-slate-100 dark:bg-white/10 text-slate-500 dark:text-slate-400 text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Opcional</span>
+                    <span className="bg-white/10 text-text-muted text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">Opcional</span>
                   </div>
                   
                   <div className="flex flex-col gap-3.5">
@@ -146,8 +146,8 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                       return (
                         <label key={mod.id} className={`flex items-center gap-4 p-4 rounded-2xl border-2 transition-all cursor-pointer active:scale-[0.98] ${
                           isChecked 
-                          ? 'border-primary bg-primary/5 dark:bg-primary/10 shadow-[0_4px_12px_-4px_rgba(244,123,37,0.2)]' 
-                          : 'border-slate-100 dark:border-white/5 bg-white dark:bg-white/5 hover:border-slate-300 dark:hover:border-white/20'
+                          ? 'border-primary bg-primary/10 shadow-[0_4px_12px_-4px_rgba(var(--theme-primary),0.2)]' 
+                          : 'border-neutral-border bg-surface hover:border-white/20'
                         }`}>
                           <input 
                             type="checkbox" 
@@ -157,7 +157,7 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                             aria-label={`Seleccionar ${mod.name}`}
                           />
                           <div className={`w-6 h-6 rounded-full flex flex-shrink-0 items-center justify-center transition-all ${
-                            isChecked ? 'bg-primary scale-110' : 'bg-slate-200 dark:bg-neutral-700'
+                            isChecked ? 'bg-primary scale-110' : 'bg-surface-2'
                           }`}>
                             {isChecked && (
                               <motion.span 
@@ -171,7 +171,7 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                             )}
                           </div>
                           <span className={`font-semibold text-[15px] transition-colors flex-1 ${
-                            isChecked ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'
+                            isChecked ? 'text-white' : 'text-text-muted'
                           }`}>
                             {mod.name}
                             {mod.extra_price > 0 && (
@@ -187,7 +187,7 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
 
               {/* Notes field */}
               <div className="mt-6">
-                <label className="font-bold text-[15px] text-slate-900 dark:text-white mb-2 block">
+                <label className="font-bold text-[15px] text-white mb-2 block">
                   Notas especiales
                 </label>
                 <textarea
@@ -196,17 +196,17 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                   placeholder="Ej: Término medio, sin picante..."
                   maxLength={200}
                   rows={2}
-                  className="w-full bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl px-4 py-3 text-[14px] placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
+                  className="w-full bg-surface border border-neutral-border rounded-2xl px-4 py-3 text-[14px] text-white placeholder:text-text-muted outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all resize-none"
                 />
               </div>
 
               <div className="mt-8 flex items-center justify-between">
-                <h3 className="font-bold text-[18px] text-slate-900 dark:text-white">Cantidad</h3>
-                <div className="flex items-center gap-5 bg-slate-100 dark:bg-white/5 rounded-full p-1.5 border border-slate-200/60 dark:border-white/5 shadow-inner">
+                <h3 className="font-bold text-[18px] text-white">Cantidad</h3>
+                <div className="flex items-center gap-5 bg-surface rounded-full p-1.5 border border-neutral-border shadow-inner">
                   <button 
                     type="button"
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    className="size-[42px] rounded-full bg-white dark:bg-neutral-800 hover:bg-slate-50 dark:hover:bg-neutral-700 flex items-center justify-center text-slate-900 dark:text-white transition-colors active:scale-90 disabled:opacity-40 disabled:active:scale-100 shadow-sm"
+                    className="size-[42px] rounded-full bg-surface-2 hover:bg-white/10 flex items-center justify-center text-white transition-colors active:scale-90 disabled:opacity-40 disabled:active:scale-100"
                     disabled={quantity <= 1}
                     aria-label="Disminuir cantidad"
                   >
@@ -218,7 +218,7 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                       initial={{ opacity: 0, y: -10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: 10 }}
-                      className="font-black text-[22px] w-6 text-center text-slate-900 dark:text-white"
+                      className="font-black text-[22px] w-6 text-center text-white"
                     >
                       {quantity}
                     </motion.span>
@@ -226,7 +226,7 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
                   <button 
                     type="button"
                     onClick={() => setQuantity(quantity + 1)}
-                    className="size-[42px] rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-white transition-colors active:scale-90 shadow-md shadow-primary/30"
+                    className="size-[42px] rounded-full bg-primary hover:brightness-110 flex items-center justify-center text-white transition-colors active:scale-90 shadow-md shadow-primary/30"
                     aria-label="Aumentar cantidad"
                   >
                     <span className="material-symbols-outlined text-[20px]">add</span>
@@ -235,20 +235,20 @@ export function ItemDetailsSheet({ item, onClose }: ItemDetailsSheetProps) {
               </div>
             </div>
 
-            <div className="absolute bottom-0 inset-x-0 p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] bg-white/95 dark:bg-[#0A0A0B]/95 backdrop-blur-xl border-t border-slate-200/60 dark:border-white/10 shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.08)]">
+            <div className="absolute bottom-0 inset-x-0 p-5 pb-[calc(env(safe-area-inset-bottom)+1.25rem)] bg-background-dark/95 backdrop-blur-xl border-t border-neutral-border shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.3)]">
               <motion.button 
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.97 }}
                 onClick={handleAddToCart}
                 disabled={isAdding}
-                className="w-full h-16 bg-primary text-white font-bold text-[18px] rounded-[20px] shadow-[0_8px_32px_rgb(244,123,37,0.35)] flex justify-between px-6 items-center transition-all outline-none focus-visible:ring-4 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#0A0A0B] overflow-hidden relative group disabled:opacity-70"
+                className="w-full h-16 bg-primary text-white font-bold text-[18px] rounded-[20px] shadow-lg shadow-primary/30 flex justify-between px-6 items-center transition-all outline-none focus-visible:ring-4 focus-visible:ring-primary/40 overflow-hidden relative group disabled:opacity-70"
               >
                 <div className="absolute inset-0 bg-white/20 translate-x-[-100%] skew-x-[-15deg] group-hover:animate-[shimmer_1.5s_infinite]"></div>
                 <span className="flex items-center gap-2">
                   <span className="material-symbols-outlined text-[22px] mb-0.5" style={{fontVariationSettings: "'FILL' 1"}}>shopping_bag</span>
                   {isAdding ? 'Agregando...' : 'Agregar Orden'}
                 </span>
-                <div className="bg-black/20 dark:bg-black/30 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 font-black">
+                <div className="bg-black/20 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10 font-black">
                   ${totalPrice.toFixed(2)}
                 </div>
               </motion.button>
