@@ -200,10 +200,10 @@ async def submit_payment(
                 "payment_id": str(payment.id),
                 "table": table.number,
                 "user_alias": user.alias,
-                "amount": payment.amount_usd,
+                "amount": float(payment.amount_usd),
                 "currency": payment.currency.value,
                 "method": payment.method.value,
-                "tip": payment.tip_amount
+                "tip": float(payment.tip_amount)
             }
         }
     )

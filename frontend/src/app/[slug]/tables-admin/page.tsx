@@ -64,6 +64,78 @@ export default function TablesAdminPage() {
   };
 
   const qrUrl = qrTable && typeof window !== 'undefined' ? `${window.location.origin}/r/${slug}/t/${qrTable.id}` : '';
+  
+  const handleDownloadQR = () => {
+    if (!qrTable) return;
+    const svg = document.querySelector('.qr-wrapper svg') as SVGElement;
+    if (!svg) return;
+    
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    
+    img.onload = () => {
+      canvas.width = 1000;
+      canvas.height = 1000;
+      if (ctx) {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 50, 50, 900, 900);
+        const pngFile = canvas.toDataURL('image/png');
+        const downloadLink = document.createElement('a');
+        downloadLink.download = `QR_Mesa_${qrTable.number}.png`;
+        downloadLink.href = pngFile;
+        downloadLink.click();
+      }
+    };
+    
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const handlePrintQR = () => {
+    if (!qrTable) return;
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    const svg = document.querySelector('.qr-wrapper svg') as SVGElement;
+    const svgData = new XMLSerializer().serializeToString(svg);
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Mesa ${qrTable.number} - CheckNow</title>
+          <style>
+            body { margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; font-family: system-ui, -apple-system, sans-serif; }
+            .card { text-align: center; padding: 40px; border: 1px dashed #ccc; border-radius: 40px; background: white; width: 300px; }
+            .brand { font-weight: 900; color: #6C63FF; font-size: 24px; margin-bottom: 5px; }
+            .subtitle { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 30px; }
+            h1 { margin: 0 0 30px 0; font-size: 28px; color: #1a1a24; }
+            .qr-container { padding: 20px; border: 1px solid #eee; border-radius: 20px; display: inline-block; margin-bottom: 20px; }
+            .footer { font-size: 8px; color: #aaa; word-break: break-all; max-width: 250px; margin: 0 auto; }
+          </style>
+        </head>
+        <body>
+          <div class="card">
+            <div class="brand">CheckNow!</div>
+            <div class="subtitle">Pide desde tu mesa</div>
+            <h1>Mesa ${qrTable.number}</h1>
+            <div class="qr-container">
+              ${svgData}
+            </div>
+            <div class="footer">${qrUrl}</div>
+          </div>
+          <script>
+            window.onload = () => { 
+              window.print(); 
+              setTimeout(() => { window.close(); }, 500);
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+  };
 
   return (
     <div className="p-4 lg:p-8 max-w-5xl mx-auto">
@@ -148,15 +220,45 @@ export default function TablesAdminPage() {
       <AnimatePresence>
         {qrTable && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center px-6" onClick={() => setQrTable(null)}>
+            className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center px-6 print-overlay-fix" onClick={() => setQrTable(null)}>
             <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} exit={{ scale: 0.9 }}
-              onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-white rounded-3xl p-8 text-center space-y-4 shadow-xl">
-              <h3 className="text-lg font-bold text-gray-900">Mesa {qrTable.number} {qrTable.label ? `(${qrTable.label})` : ''}</h3>
-              <div className="flex justify-center bg-white p-4 rounded-xl shadow-inner border border-gray-100">
+              onClick={e => e.stopPropagation()} className="w-full max-w-sm bg-white rounded-3xl p-8 text-center space-y-4 shadow-xl printable-qr relative">
+              
+              {/* Branding for print */}
+              <div className="hidden print:flex print-brand">
+                <span>CheckNow!</span>
+                <span>Pide desde tu mesa</span>
+              </div>
+
+              <h3 className="text-lg font-bold text-gray-900">
+                Mesa {qrTable.number} {qrTable.label ? `(${qrTable.label})` : ''}
+              </h3>
+              
+              <div className="flex justify-center bg-white p-4 rounded-xl shadow-inner border border-gray-100 qr-wrapper">
                 <QRCode value={qrUrl} size={220} level="H" />
               </div>
-              <p className="text-[10px] text-gray-500 break-all select-all p-2 bg-gray-50 rounded-lg border border-gray-100">{qrUrl}</p>
-              <button onClick={() => { window.print(); }} className="w-full h-12 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition">🖨️ Imprimir QR</button>
+              
+              <div className="hidden print:block print-footer">
+                <p>{qrUrl}</p>
+              </div>
+
+              <p className="text-[10px] text-gray-500 break-all select-all p-2 bg-gray-50 rounded-lg border border-gray-100 no-print">
+                {qrUrl}
+              </p>
+              
+              <div className="flex flex-col gap-2 no-print">
+                <button onClick={handlePrintQR} className="w-full h-12 bg-gray-900 text-white font-bold rounded-2xl hover:bg-gray-800 transition shadow-lg shadow-gray-200 flex items-center justify-center gap-2">
+                  <span className="material-symbols-outlined text-xl">print</span> Imprimir Tarjeta
+                </button>
+                <button onClick={handleDownloadQR} className="w-full h-12 bg-gray-100 text-gray-900 font-bold rounded-2xl hover:bg-gray-200 transition flex items-center justify-center gap-2 border border-gray-200">
+                  <span className="material-symbols-outlined text-xl">download</span> Descargar Imagen
+                </button>
+              </div>
+
+              {/* Close button for screen */}
+              <button onClick={() => setQrTable(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-900 transition no-print">
+                <span className="material-symbols-outlined">close</span>
+              </button>
             </motion.div>
           </motion.div>
         )}

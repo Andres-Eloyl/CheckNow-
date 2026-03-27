@@ -149,3 +149,75 @@ body {
 .dot-free { @apply bg-success; }
 .dot-active { @apply bg-warning; }
 .dot-reserved { @apply bg-danger; }
+
+/* ─── Printing ─── */
+@media print {
+  .no-print { display: none !important; }
+  
+  body {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  /* Reset layout for consistent printing */
+  .print-overlay-fix {
+    position: static !important;
+    background: transparent !important;
+    display: block !important;
+    padding: 0 !important;
+    visibility: visible !important;
+  }
+
+  .printable-qr {
+    visibility: visible !important;
+    margin: 2cm auto !important;
+    box-shadow: none !important;
+    border: 1px dashed #ccc !important;
+    width: 6.5cm !important;
+    padding: 1cm !important;
+    border-radius: 1cm !important;
+    page-break-inside: avoid;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    background: white !important;
+    color: black !important;
+  }
+
+  .print-brand { 
+    display: flex !important; 
+    flex-direction: column !important; 
+    align-items: center !important; 
+    margin-bottom: 0.5cm !important; 
+  }
+  
+  .print-brand span:first-child { 
+    font-weight: 900 !important; 
+    color: #6C63FF !important; 
+    font-size: 14pt !important; 
+  }
+  
+  .print-brand span:last-child { 
+    font-size: 6pt !important; 
+    color: #888 !important; 
+    text-transform: uppercase !important; 
+  }
+  
+  .qr-wrapper { 
+    background: white !important; 
+    padding: 0.3cm !important; 
+    border: 1px solid #eee !important; 
+    border-radius: 0.5cm !important; 
+  }
+  
+  .print-footer { 
+    display: block !important; 
+    margin-top: 0.5cm !important; 
+    font-size: 6pt !important; 
+    color: #aaa !important; 
+    word-break: break-all !important; 
+  }
+}

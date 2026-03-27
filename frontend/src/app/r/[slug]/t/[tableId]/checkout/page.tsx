@@ -63,18 +63,31 @@ export default function GuestCheckoutPage() {
 
   useEffect(() => {
     if (!slug || !tableId) return;
-    Promise.all([
-      checkoutService.getCheckoutSummary(slug, tableId),
-      checkoutService.getExchangeRate(slug),
-      restaurantService.getPublicInfo(slug),
-    ]).then(([sum, rate, rest]) => {
-      setSummary(sum);
-      setExchangeRate(rate);
-      setRestaurant(rest);
-      setError(null);
-    }).catch((e: any) => {
-      setError(e.message || 'Error al cargar los datos de pago.');
-    }).finally(() => setLoading(false));
+    
+    const fetchCheckoutData = async () => {
+      try {
+        const [sum, rest] = await Promise.all([
+          checkoutService.getCheckoutSummary(slug, tableId),
+          restaurantService.getPublicInfo(slug),
+        ]);
+        setSummary(sum);
+        setRestaurant(rest);
+        
+        try {
+          const rate = await checkoutService.getExchangeRate(slug);
+          setExchangeRate(rate);
+        } catch (e) {
+          console.warn("No se pudo cargar la tasa BCV", e);
+        }
+        setError(null);
+      } catch (e: any) {
+        setError(e.message || 'Error al cargar los datos de pago.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCheckoutData();
   }, [slug, tableId]);
 
   // WebSocket for payment status
@@ -115,20 +128,32 @@ export default function GuestCheckoutPage() {
     let amountLocal = 0;
 
     if (selectedMethod === 'pago_movil') {
-      referenceCode = pagoMovilData.referencia;
+      if (!pagoMovilData.banco || !pagoMovilData.telefono || !pagoMovilData.cedula || !pagoMovilData.referencia) {
+        setError('Por favor completa todos los datos de Pago Móvil.');
+        setSubmitting(false);
+        return;
+      }
+      referenceCode = `${pagoMovilData.banco} | ${pagoMovilData.telefono} | ${pagoMovilData.cedula} | Ref: ${pagoMovilData.referencia}`;
       currency = 'VES';
       amountLocal = totalVES;
     } else if (selectedMethod === 'zelle') {
-      referenceCode = zelleData.referencia;
+      if (!zelleData.email || !zelleData.referencia) {
+        setError('Por favor completa todos los datos de Zelle.');
+        setSubmitting(false);
+        return;
+      }
+      referenceCode = `${zelleData.email} | Ref: ${zelleData.referencia}`;
     } else if (selectedMethod === 'efectivo_ves') {
       currency = 'VES';
       amountLocal = totalVES;
     }
 
+    const backendMethod = selectedMethod.includes('efectivo') ? 'efectivo' : selectedMethod;
+
     const paymentData: PaymentCreate = {
       amount_usd: totalUSD,
       currency,
-      method: selectedMethod as PaymentCreate['method'],
+      method: backendMethod as PaymentCreate['method'],
       tip_amount: tipAmount,
       reference_code: referenceCode || undefined,
       exchange_rate: exchangeRate?.usd_to_ves,

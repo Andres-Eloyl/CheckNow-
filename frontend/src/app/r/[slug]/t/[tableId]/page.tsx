@@ -53,9 +53,9 @@ export default function QRLandingPage() {
         console.error("Session validation error:", err);
         if (err?.status === 404) {
           setSessionNotOpen(true);
-        } else {
-          setError(`Error al validar la mesa. ${err?.detail || err?.message || 'Intenta de nuevo.'}`);
         }
+        // If not 404, we intentionally do not block or show a red error yet.
+        // The join process will catch and display real errors via handleJoin.
       } finally {
         setValidating(false);
       }

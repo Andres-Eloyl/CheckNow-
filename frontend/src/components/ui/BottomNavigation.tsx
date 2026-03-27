@@ -16,6 +16,8 @@ export function BottomNavigation() {
   const cartPath = `${base}/cart`;
   const checkoutPath = `${base}/checkout`;
 
+  const profilePath = `${base}/profile`;
+
   const isActive = (path: string) => pathname === path;
 
   // Don't render if we don't have route params
@@ -55,12 +57,13 @@ export function BottomNavigation() {
           <p className="text-[11px] font-semibold leading-none tracking-wide">Pagar</p>
         </Link>
         <Link 
-          className={`flex flex-1 flex-col items-center justify-center gap-1.5 group outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-lg text-slate-400 hover:text-slate-200 transition-colors`} 
-          href={`${base}`}
+          className={`flex flex-1 flex-col items-center justify-center gap-1.5 group outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:rounded-lg ${isActive(profilePath) ? 'text-primary' : 'text-slate-400 hover:text-slate-200 transition-colors'}`} 
+          href={profilePath}
           aria-label="Perfil"
+          aria-current={isActive(profilePath) ? "page" : undefined}
         >
-          <div className="flex p-2 items-center justify-center rounded-2xl group-hover:bg-white/5 group-active:scale-90 transition-all duration-300">
-            <span className="material-symbols-outlined text-[26px] transition-transform group-hover:-translate-y-0.5" style={{fontVariationSettings: "'FILL' 0"}}>person</span>
+          <div className={`flex p-2 items-center justify-center rounded-2xl transition-all duration-300 relative overflow-hidden group-active:scale-90 ${isActive(profilePath) ? 'bg-primary/10' : 'group-hover:bg-white/5'}`}>
+            <span className={`material-symbols-outlined text-[26px] ${isActive(profilePath) ? 'relative z-10 drop-shadow-sm' : 'transition-transform group-hover:-translate-y-0.5'}`} style={{fontVariationSettings: isActive(profilePath) ? "'FILL' 1" : "'FILL' 0"}}>person</span>
           </div>
           <p className="text-[11px] font-semibold leading-none tracking-wide">Perfil</p>
         </Link>

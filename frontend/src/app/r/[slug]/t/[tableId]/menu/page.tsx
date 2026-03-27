@@ -48,19 +48,21 @@ export default function GuestMenuPage() {
     setLoading(true);
     menuService.getMenu(slug)
       .then((data) => {
-        setCategories(data.categories);
+        setCategories(Array.isArray(data.categories) ? data.categories : []);
       })
       .catch((err) => {
         setError(err instanceof Error ? err.message : 'Error al cargar el menú');
       });
   }, [slug, isCacheValid, setCategories, setLoading, setError]);
 
+  const safeCategories = Array.isArray(categories) ? categories : [];
+
   // Set first category active
   useEffect(() => {
-    if (categories.length > 0 && !activeCategory) {
-      setActiveCategory(categories[0].id);
+    if (safeCategories.length > 0 && !activeCategory) {
+      setActiveCategory(safeCategories[0].id);
     }
-  }, [categories, activeCategory]);
+  }, [safeCategories, activeCategory]);
 
   // Fetch cart count
   useEffect(() => {
@@ -88,9 +90,9 @@ export default function GuestMenuPage() {
     }
   }, [slug]);
 
-  const activeCategoryData = categories.find(c => c.id === activeCategory);
-  const activeCategoryItems = activeCategoryData?.items.filter(i => i.is_available) || [];
-  const featuredItems = categories.flatMap(c => c.items.filter(i => i.is_featured && i.is_available));
+  const activeCategoryData = safeCategories.find(c => c.id === activeCategory);
+  const activeCategoryItems = activeCategoryData?.items?.filter(i => i.is_available) || [];
+  const featuredItems = safeCategories.flatMap(c => (c.items || []).filter(i => i.is_featured && i.is_available));
 
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
@@ -105,7 +107,7 @@ export default function GuestMenuPage() {
     <div className="bg-background-dark font-[Inter] text-white min-h-[100dvh] flex flex-col antialiased">
       <div className="sticky top-0 z-50 flex flex-col w-full">
         <MenuHeader />
-        <CategoriesTabBar categories={categories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
+        <CategoriesTabBar categories={safeCategories} activeCategory={activeCategory} setActiveCategory={setActiveCategory} />
       </div>
 
       <main className="flex-1 p-5 pb-[140px] max-w-2xl mx-auto w-full">
