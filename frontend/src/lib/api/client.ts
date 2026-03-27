@@ -14,8 +14,7 @@ const getApiBaseUrl = () => {
   if (typeof window === 'undefined') {
     return (INTERNAL_BACKEND_URL.endsWith('/') ? INTERNAL_BACKEND_URL.slice(0, -1) : INTERNAL_BACKEND_URL);
   }
-  // Use relative URL in the browser - handled by Next.js proxy in next.config.ts
-  return '';
+  return (PUBLIC_API_URL.endsWith('/') ? PUBLIC_API_URL.slice(0, -1) : PUBLIC_API_URL);
 };
 
 // ──────────────────────────────────────────────
@@ -237,19 +236,7 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      // If parsing JSON fails, try to get the raw text (could be an HTML error page from proxy/cloud)
-      let detail = data?.detail || data?.message;
-      if (!detail) {
-        try {
-          const text = await response.text();
-          detail = text.slice(0, 200) || `HTTP ${response.status}: ${response.statusText}`;
-        } catch {
-          detail = `HTTP ${response.status}: ${response.statusText}`;
-        }
-      }
-      
-      const errorBody = `[API Error] ${response.status} ${fetchOptions.method || 'GET'} ${url}: ${detail}`;
-      console.error(errorBody);
+      const detail = data?.detail || data?.message || `HTTP ${response.status}: ${response.statusText}`;
       throw new ApiError(response.status, detail, url, fetchOptions.method || 'GET');
     }
 
