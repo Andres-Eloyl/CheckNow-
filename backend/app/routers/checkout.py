@@ -13,7 +13,7 @@ from datetime import datetime, timezone
 from app.core.database import get_db
 from app.core.dependencies import get_restaurant_id, get_current_staff
 from app.websockets.manager import ws_manager
-from app.core.security import encrypt_reference
+from app.core.security import encrypt_reference, decrypt_reference
 from app.services.bcv import get_current_rate
 
 from app.models.session import TableSession, SessionUser, SessionStatus
@@ -214,6 +214,48 @@ async def submit_payment(
 # ──────────────────────────────────────────────
 # Staff Verification Endpoints
 # ──────────────────────────────────────────────
+
+@router.get("/api/{slug}/payments", response_model=List[PaymentResponse])
+async def get_payments(
+    slug: str,
+    restaurant_id: str = Depends(get_restaurant_id),
+    current_user: dict = Depends(get_current_staff),
+    db: AsyncSession = Depends(get_db),
+):
+    """Staff fetches all payments for the restaurant."""
+    result = await db.execute(
+        select(Payment, TableSession, SessionUser, Table)
+        .join(TableSession, Payment.session_id == TableSession.id)
+        .join(SessionUser, Payment.session_user_id == SessionUser.id)
+        .join(Table, TableSession.table_id == Table.id)
+        .where(Table.restaurant_id == restaurant_id)
+        .order_by(Payment.created_at.desc())
+    )
+    rows = result.all()
+    
+    payments = []
+    for payment, db_session, user, table in rows:
+        ref_code = decrypt_reference(payment.reference_code_enc) if payment.reference_code_enc else None
+        
+        payment_dict = {
+            "id": payment.id,
+            "session_user_id": payment.session_user_id,
+            "user_alias": user.alias,
+            "table_number": table.number,
+            "amount_usd": float(payment.amount_usd),
+            "amount_local": float(payment.amount_local) if payment.amount_local is not None else None,
+            "currency": payment.currency.value,
+            "method": payment.method.value,
+            "tip_amount": float(payment.tip_amount),
+            "status": payment.status.value,
+            "reference_code": ref_code,
+            "rejection_reason": payment.rejected_reason,
+            "created_at": payment.created_at
+        }
+        payments.append(payment_dict)
+        
+    return payments
+
 
 @router.post("/api/{slug}/payments/{payment_id}/verify", response_model=PaymentResponse)
 async def verify_payment(

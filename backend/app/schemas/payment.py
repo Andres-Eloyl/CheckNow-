@@ -23,12 +23,16 @@ class PaymentResponse(BaseModel):
     """Response schema for a payment."""
     id: UUID
     session_user_id: UUID
+    user_alias: Optional[str] = None
+    table_number: Optional[int] = None
     amount_usd: float
     amount_local: Optional[float] = None
     currency: str
     method: str
     tip_amount: float
     status: str
+    reference_code: Optional[str] = None
+    rejection_reason: Optional[str] = None
     created_at: datetime
 
     model_config = {"from_attributes": True}
