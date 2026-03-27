@@ -385,7 +385,7 @@ async def get_active_orders(
         data = {c.name: getattr(order, c.name) for c in order.__table__.columns}
         data["session_user_alias"] = alias
         data["menu_item_name"] = item_name
-        data["table_number"] = table_number
+        data["table_number"] = str(table_number) if table_number is not None else None
         orders.append(data)
         
     return orders
