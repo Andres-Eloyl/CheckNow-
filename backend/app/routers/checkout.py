@@ -260,7 +260,7 @@ async def get_payments(
 @router.post("/api/{slug}/payments/{payment_id}/verify", response_model=PaymentResponse)
 async def verify_payment(
     slug: str,
-    payment_id: str,
+    payment_id: uuid.UUID,
     restaurant_id: str = Depends(get_restaurant_id),
     current_user: dict = Depends(get_current_staff),
     db: AsyncSession = Depends(get_db),
@@ -288,7 +288,7 @@ async def verify_payment(
 
     # Verify
     payment.status = PaymentStatus.VERIFIED
-    payment.verified_by = current_user["sub"]
+    payment.verified_by = uuid.UUID(current_user["sub"])
     payment.verified_at = datetime.now(timezone.utc)
     
     # Update Session financial totals
@@ -317,7 +317,7 @@ async def verify_payment(
 @router.post("/api/{slug}/payments/{payment_id}/reject", response_model=PaymentResponse)
 async def reject_payment(
     slug: str,
-    payment_id: str,
+    payment_id: uuid.UUID,
     reject_in: PaymentReject,
     restaurant_id: str = Depends(get_restaurant_id),
     current_user: dict = Depends(get_current_staff),
@@ -346,7 +346,7 @@ async def reject_payment(
 
     payment.status = PaymentStatus.REJECTED
     payment.rejected_reason = reject_in.reason
-    payment.verified_by = current_user["sub"]
+    payment.verified_by = uuid.UUID(current_user["sub"])
     payment.verified_at = datetime.now(timezone.utc)
 
     await db.commit()

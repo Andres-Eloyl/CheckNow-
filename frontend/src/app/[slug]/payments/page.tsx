@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useWebSocket } from '@/hooks/useWebSocket';
 import { getStaffWebSocketUrl } from '@/lib/api/client';
 import type { PaymentResponse } from '@/types/api.types';
+import { useToast } from '@/components/ui/Toast';
 
 const METHOD_LABELS: Record<string, { label: string; icon: string }> = {
   pago_movil: { label: 'Pago Móvil', icon: 'phone_android' },
@@ -24,6 +25,7 @@ export default function PaymentsPage() {
   const slug = params.slug;
   const { accessToken } = useAuthStore();
   const { setPendingPayments, addPendingPayment, removePayment, setWsConnected } = useDashboardStore();
+  const { toast } = useToast();
 
   const [payments, setPayments] = useState<PaymentResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -63,8 +65,11 @@ export default function PaymentsPage() {
     setProcessing(paymentId);
     try {
       await paymentService.verifyPayment(slug, paymentId);
+      toast('Pago verificado exitosamente', 'success');
       fetchPayments();
-    } catch {} finally {
+    } catch (error: any) {
+      toast(error?.detail || 'Error al verificar el pago', 'error');
+    } finally {
       setProcessing(null);
     }
   };
@@ -74,10 +79,13 @@ export default function PaymentsPage() {
     setProcessing(rejectingId);
     try {
       await paymentService.rejectPayment(slug, rejectingId, { reason: rejectReason || 'Pago rechazado por el staff' });
+      toast('Pago rechazado correctamente', 'success');
       setRejectingId(null);
       setRejectReason('');
       fetchPayments();
-    } catch {} finally {
+    } catch (error: any) {
+      toast(error?.detail || 'Error al rechazar el pago', 'error');
+    } finally {
       setProcessing(null);
     }
   };
