@@ -15,7 +15,16 @@ settings = get_settings()
 
 # Strip ?pgbouncer=true from DATABASE_URL — asyncpg doesn't recognize it.
 # PgBouncer compatibility is handled by prepared_statement_cache_size=0 below.
-_db_url = settings.DATABASE_URL.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
+# Use normalized URL and strip pgbouncer params (asyncpg handling)
+_db_url = settings.normalized_database_url.replace("?pgbouncer=true", "").replace("&pgbouncer=true", "")
+
+connect_args = {
+    "prepared_statement_cache_size": 0,  # CRITICAL: required for Supabase pooler / PgBouncer
+}
+
+# Enable SSL for production environments
+if settings.is_production:
+    connect_args["ssl"] = True
 
 engine = create_async_engine(
     _db_url,
@@ -24,9 +33,7 @@ engine = create_async_engine(
     echo=settings.DB_ECHO,
     pool_pre_ping=True,
     pool_recycle=3600,
-    connect_args={
-        "prepared_statement_cache_size": 0,  # CRITICAL: required for Supabase pooler / PgBouncer
-    },
+    connect_args=connect_args,
 )
 
 async_session_factory = async_sessionmaker(
@@ -47,9 +54,11 @@ async def get_db() -> AsyncSession:
         try:
             yield session
             await session.commit()
-        except Exception:
+        except Exception as e:
+            import logging
+            logging.getLogger("app.database").error(f"❌ Database session error: {str(e)}")
             await session.rollback()
-            raise
+            raise e from e
         finally:
             await session.close()
 

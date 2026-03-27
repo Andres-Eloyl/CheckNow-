@@ -28,6 +28,6 @@ export const tablesService = {
 
   /** Generate the QR API URL for a table (returns the image URL directly) */
   getTableQRUrl(slug: string, tableId: string): string {
-    return `${API_BASE_URL}/api/${slug}/tables/${tableId}/qr`;
+    return `${API_BASE_URL()}/api/${slug}/tables/${tableId}/qr`;
   },
 };

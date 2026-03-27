@@ -10,9 +10,13 @@
 const INTERNAL_BACKEND_URL = process.env.BACKEND_URL || 'http://backend:8000';
 const PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001';
 
-const API_BASE_URL = typeof window === 'undefined'
-  ? (INTERNAL_BACKEND_URL.endsWith('/') ? INTERNAL_BACKEND_URL.slice(0, -1) : INTERNAL_BACKEND_URL)
-  : (PUBLIC_API_URL.endsWith('/') ? PUBLIC_API_URL.slice(0, -1) : PUBLIC_API_URL);
+const getApiBaseUrl = () => {
+  if (typeof window === 'undefined') {
+    return (INTERNAL_BACKEND_URL.endsWith('/') ? INTERNAL_BACKEND_URL.slice(0, -1) : INTERNAL_BACKEND_URL);
+  }
+  // Use relative URL in the browser - handled by Next.js proxy in next.config.ts
+  return '';
+};
 
 // ──────────────────────────────────────────────
 // Token Management
@@ -106,6 +110,8 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public detail: string,
+    public url?: string,
+    public method?: string,
     public originalError?: unknown
   ) {
     super(detail);
@@ -125,6 +131,8 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   staffAuth?: boolean;
   /** If true, include X-Session-User-Id header. */
   sessionAuth?: boolean;
+  /** Internal retry tracking */
+  retryCount?: number;
 }
 
 /**
@@ -174,7 +182,7 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
     }
   }
 
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${getApiBaseUrl()}${endpoint}`;
 
   try {
     let response = await fetch(url, {
@@ -190,7 +198,7 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
       
       if (refreshToken) {
         try {
-          const refreshRes = await fetch(`${API_BASE_URL}/api/auth/refresh`, {
+          const refreshRes = await fetch(`${getApiBaseUrl()}/api/auth/refresh`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ refresh_token: refreshToken })
@@ -229,16 +237,37 @@ async function apiRequest<T>(endpoint: string, options: RequestOptions = {}): Pr
     const data = await response.json().catch(() => null);
 
     if (!response.ok) {
-      const detail = data?.detail || data?.message || `HTTP ${response.status}: ${response.statusText}`;
-      throw new ApiError(response.status, detail);
+      // If parsing JSON fails, try to get the raw text (could be an HTML error page from proxy/cloud)
+      let detail = data?.detail || data?.message;
+      if (!detail) {
+        try {
+          const text = await response.text();
+          detail = text.slice(0, 200) || `HTTP ${response.status}: ${response.statusText}`;
+        } catch {
+          detail = `HTTP ${response.status}: ${response.statusText}`;
+        }
+      }
+      
+      const errorBody = `[API Error] ${response.status} ${fetchOptions.method || 'GET'} ${url}: ${detail}`;
+      console.error(errorBody);
+      throw new ApiError(response.status, detail, url, fetchOptions.method || 'GET');
     }
 
     return data as T;
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof ApiError) {
       throw error;
     }
-    throw new ApiError(0, 'Error de conexión con el servidor. Verifica tu conexión.', error);
+
+    // Auto-retry once for network errors (Failed to fetch)
+    if (error instanceof TypeError && error.message === 'Failed to fetch' && (options.retryCount || 0) === 0) {
+      console.warn(`[API] Retrying connection to ${url}...`);
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      return apiRequest<T>(endpoint, { ...options, retryCount: 1 });
+    }
+
+    const detail = `Error de conexión: No se pudo contactar con el servidor (${url})`;
+    throw new ApiError(0, detail, url, fetchOptions.method || 'GET', error);
   }
 }
 
@@ -273,7 +302,7 @@ export const api = {
 // ──────────────────────────────────────────────
 
 export function getWebSocketUrl(path: string): string {
-  const wsBase = API_BASE_URL.replace(/^http/, 'ws');
+  const wsBase = getApiBaseUrl().replace(/^http/, 'ws');
   return `${wsBase}${path}`;
 }
 
@@ -287,4 +316,4 @@ export function getStaffWebSocketUrl(slug: string, staffToken: string): string {
   return getWebSocketUrl(`/ws/dashboard/${slug}?token=${staffToken}`);
 }
 
-export { TOKEN_KEYS, API_BASE_URL };
+export { TOKEN_KEYS, getApiBaseUrl as API_BASE_URL };

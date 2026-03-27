@@ -33,17 +33,35 @@ export default function DashboardHomePage() {
 
   const [kpis, setKpis] = useState<DashboardKPIs | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [openingTable, setOpeningTable] = useState<string | null>(null);
 
   useEffect(() => {
     if (!slug) return;
 
+    setLoading(true);
+    setError(null);
+
     Promise.all([
-      analyticsService.getDashboardKPIs(slug).catch(() => null),
-      tablesService.getTables(slug).catch(() => []),
+      analyticsService.getDashboardKPIs(slug).catch(err => {
+        console.error('[Dashboard] Error fetching KPIs:', err);
+        return null;
+      }),
+      tablesService.getTables(slug).catch(err => {
+        console.error('[Dashboard] Error fetching Tables:', err);
+        return [];
+      }),
     ]).then(([kpiData, tableData]) => {
+      // If BOTH fail, it's likely a connection issue
+      if (!kpiData && (!tableData || tableData.length === 0)) {
+        setError('No se pudo conectar con el servidor. Por favor, recarga la página.');
+      }
+      
       if (kpiData) setKpis(kpiData);
       setTables(tableData as TableResponse[]);
+    }).catch(err => {
+      setError('Error inesperado al cargar los datos.');
+      console.error(err);
     }).finally(() => setLoading(false));
   }, [slug, setTables]);
 
@@ -108,6 +126,24 @@ export default function DashboardHomePage() {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0 },
   };
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-vh-100 p-6 text-center">
+        <div className="size-20 rounded-full bg-danger/10 flex items-center justify-center mb-6">
+          <span className="material-symbols-outlined text-danger text-4xl">cloud_off</span>
+        </div>
+        <h1 className="text-xl font-black mb-2">Error de conexión</h1>
+        <p className="text-text-muted mb-8 max-w-sm">{error}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="px-6 py-3 rounded-2xl bg-primary text-white font-bold hover:scale-105 transition-all"
+        >
+          Reintentar conexión
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 lg:p-8 max-w-7xl mx-auto">

@@ -54,6 +54,20 @@ class Settings(BaseSettings):
     ALLOWED_ORIGINS: str = "http://localhost:3000,http://localhost:3001"
 
     @property
+    def normalized_database_url(self) -> str:
+        """Ensures the DATABASE_URL uses the postgresql+asyncpg:// scheme."""
+        url = self.DATABASE_URL
+        if url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgresql://") and "+asyncpg" not in url:
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        return url
+
+    @property
+    def is_production(self) -> bool:
+        return self.ENVIRONMENT.lower() in ["production", "prod", "staging"]
+
+    @property
     def allowed_origins_list(self) -> List[str]:
         return [origin.strip() for origin in self.ALLOWED_ORIGINS.split(",")]
 

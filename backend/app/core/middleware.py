@@ -53,22 +53,29 @@ class TenantMiddleware(BaseHTTPMiddleware):
 
         if slug:
             # Resolve slug to restaurant_id
-            from app.models.restaurant import Restaurant
-            async with async_session_factory() as session:
-                result = await session.execute(
-                    select(Restaurant.id, Restaurant.is_active)
-                    .where(Restaurant.slug == slug)
-                )
-                restaurant = result.first()
-
-                if restaurant is None:
-                    return self._json_error(404, f"Restaurant '{slug}' not found")
-
-                if not restaurant.is_active:
-                    return self._json_error(403, "Restaurant account is suspended")
-
-                request.state.restaurant_id = str(restaurant.id)
-                request.state.slug = slug
+            try:
+                from app.models.restaurant import Restaurant
+                async with async_session_factory() as session:
+                    result = await session.execute(
+                        select(Restaurant.id, Restaurant.is_active)
+                        .where(Restaurant.slug == slug)
+                    )
+                    restaurant = result.first()
+    
+                    if restaurant is None:
+                        return self._json_error(404, f"Restaurant '{slug}' not found")
+    
+                    if not restaurant.is_active:
+                        return self._json_error(403, "Restaurant account is suspended")
+    
+                    request.state.restaurant_id = str(restaurant.id)
+                    request.state.slug = slug
+            except Exception as e:
+                import logging
+                logger = logging.getLogger("app.middleware")
+                error_msg = f"Database error during tenant resolution for '{slug}': {str(e)}"
+                logger.error(f"❌ {error_msg}")
+                return self._json_error(500, error_msg)
         else:
             request.state.restaurant_id = None
             request.state.slug = None
